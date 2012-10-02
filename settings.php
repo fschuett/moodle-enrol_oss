@@ -58,8 +58,14 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/teachers_course_id',
             get_string('teachers_course_id_key', 'enrol_openlml'),
             get_string('teachers_course_id', 'enrol_openlml'), 'teachers'));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/teachers_role',
-            get_string('teachers_role_key', 'enrol_openlml'), get_string('teachers_role', 'enrol_openlml'), 'student'));
+    if (!during_initial_install()) {
+        $options = get_default_enrol_roles(get_context_instance(CONTEXT_SYSTEM));
+        $student = get_archetype_roles('student');
+        $student = reset($student);
+        $settings->add(new admin_setting_configselect('enrol_openlml/teachers_role',
+            get_string('teachers_role_key', 'enrol_openlml'),
+            get_string('teachers_role', 'enrol_openlml'), $student->id, $options));
+    }
     $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/prefix_teacher_members',
             get_string('prefix_teacher_members_key', 'enrol_openlml'),
             get_string('prefix_teacher_members', 'enrol_openlml'), 'p_teachers_'));
@@ -70,9 +76,14 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/teachers_course_context',
             get_string('teachers_course_context_key', 'enrol_openlml'),
             get_string('teachers_course_context', 'enrol_openlml'), 'Lehrer'));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/teachers_course_role',
+    if (!during_initial_install()) {
+        $options = get_assignable_roles(get_context_instance(CONTEXT_SYSTEM));
+        $coursecreator = get_archetype_roles('coursecreator');
+        $coursecreator = reset($coursecreator);
+        $settings->add(new admin_setting_configselect('enrol_openlml/teachers_course_role',
             get_string('teachers_course_role_key', 'enrol_openlml'),
-            get_string('teachers_course_role', 'enrol_openlml'), 'coursecreator'));
+            get_string('teachers_course_role', 'enrol_openlml'), $coursecreator->id, $options));
+    }
     $options = $yesno;
     $settings->add(new admin_setting_configselect('enrol_openlml/teachers_category_autocreate',
             get_string('teachers_category_autocreate_key', 'enrol_openlml'),
@@ -97,6 +108,12 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/student_project_prefix',
             get_string('student_project_prefix_key', 'enrol_openlml'),
             get_string('student_project_prefix', 'enrol_openlml'), 'p_'));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/student_role',
-            get_string('student_role_key', 'enrol_openlml'), get_string('student_role', 'enrol_openlml'), 'student'));
+    if (!during_initial_install()) {
+        $options = get_default_enrol_roles(get_context_instance(CONTEXT_SYSTEM));
+        $student = get_archetype_roles('student');
+        $student = reset($student);
+        $settings->add(new admin_setting_configselect('enrol_openlml/student_role',
+            get_string('student_role_key', 'enrol_openlml'),
+            get_string('student_role', 'enrol_openlml'), $student->id, $options));
+    }
 }

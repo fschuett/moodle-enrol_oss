@@ -229,8 +229,24 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
         }
 
-        // Remove empty cohorts.
-        $this->cohort_remove_empty_cohorts();
+        // Remove unneeded cohorts.
+        $toremove = array();
+        $cohorts = $this->get_cohortlist();
+        if ($this->verbose) {
+            mtrace($this->errorlogtag . 'cohorts list:' . print($cohorts));
+        }
+        foreach ($cohorts as $cohort) {
+            if (!in_array($cohort->idnumber, $ldap_groups)) {
+                $toremove[] = $cohort->id;
+            }
+        }
+        if ($this->verbose) {
+            mtrace($this->errorlogtag . 'remove cohorts list:' . print($toremove));
+        }
+        if (!empty($toremove)) {
+            $DB->delete_records_list('cohort_members', 'cohortid', $toremove);
+            $DB->delete_records_list('cohort', 'id', $toremove);
+        }
 
         if ($this->config->teachers_category_autocreate OR $this->config->teachers_category_autoremove) {
             if ($this->verbose) {
@@ -315,10 +331,6 @@ class enrol_openlml_plugin extends enrol_plugin {
         if ($this->verbose) {
             mtrace($this->errorlogtag . 'sync_cohort_enrolments called');
         }
-        $role = $DB->get_record('role', array('shortname' => $this->config->student_role));
-        if ($this->verbose) {
-            mtrace($this->errorlogtag . 'role ' . print($role));
-        }
         $enrol = enrol_get_plugin('cohort');
         if ($this->verbose) {
             mtrace($this->errorlogtag . 'enrol plugin loaded ' . print($enrol));
@@ -335,9 +347,13 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
             foreach ($groups as $group) {
                 if (!isset($cohorts[$group]) AND $cohortid=$this->get_cohort_id($group, false)) {
-                    $enrol->add_instance($course,
-                            array('customint1'=>$cohortid,
-                                  'roleid'=>$role->id));
+                    if ($this->has_teachers_as_members($group)) {
+                        $enrol->add_instance($course,
+                                array('customint1' => $cohortid, 'roleid' => $this->config->teachers_role));
+                    } else {
+                        $enrol->add_instance($course,
+                                array('customint1' => $cohortid, 'roleid' => $this->config->student_role));
+                    }
                     if ($this->verbose) {
                         mtrace($this->errorlogtag . 'add cohort ' . $group . ' to course ' . $course->name);
                     }
@@ -534,26 +550,6 @@ class enrol_openlml_plugin extends enrol_plugin {
         return $ret;
     }
 
-    private function cohort_remove_empty_cohorts() {
-        global $DB;
-        $empty = array();
-        $cohorts = $this->get_cohortlist();
-        if ($this->verbose) {
-            mtrace($this->errorlogtag . 'cohorts list:' . print($cohorts));
-        }
-        foreach ($cohorts as $cohort) {
-            if (!$DB->record_exists('cohort_members', array('cohortid'=>$cohort->id))) {
-                $empty[] = $cohort->id;
-            }
-        }
-        if ($this->verbose) {
-            mtrace($this->errorlogtag . 'empty cohorts list:' . print($empty));
-        }
-        if (!empty($empty)) {
-            $DB->delete_records_list('cohort', 'id', $empty);
-        }
-    }
-
     private function get_cohort_id($groupname, $autocreate = true) {
         global $DB;
         $params = array (
@@ -591,7 +587,8 @@ class enrol_openlml_plugin extends enrol_plugin {
             $records = $DB->get_records_sql($sql, $params);
         } else {
             $sql = " SELECT DISTINCT c.id, c.idnumber, c.name
-                    FROM {cohort} c";
+                    FROM {cohort} c
+                            WHERE c.component = 'enrol_openlml'";
             $records = $DB->get_records_sql($sql);
         }
         if ($this->verbose) {
@@ -666,9 +663,11 @@ class enrol_openlml_plugin extends enrol_plugin {
         foreach ($classes as $c) {
             $pattern[] = '(' . $this->config->attribute . '=' . $c . '*)';
         }
-        $classes = explode(',', $this->config->student_groups);
-        foreach ($classes as $c) {
-            $pattern[] = '(' . $this->config->attribute . '=' . $c . '*)';
+        if (!empty($this->config->student_groups)) {
+            $classes = explode(',', $this->config->student_groups);
+            foreach ($classes as $c) {
+                $pattern[] = '(' . $this->config->attribute . '=' . $c . '*)';
+            }
         }
         $pattern[] = '(' . $this->config->attribute . '='. $this->config->student_project_prefix . '*)';
         if ($this->verbose) {
@@ -842,13 +841,8 @@ class enrol_openlml_plugin extends enrol_plugin {
         $cat_obj->context = get_context_instance(CONTEXT_COURSECAT, $cat_obj->id);
         mark_context_dirty($cat_obj->context->path);
         // Set teachers role to course creator.
-        $role = $DB->get_record('role', array('shortname' => $this->config->teachers_course_role));
-        if (empty($role)) {
-            print($this->errorlogtag . 'could not get teachers course role (' . $this->config->teachers_course_role . ').');
-            return false;
-        }
-        if (!role_assign($role->id, $user->id, $cat_obj->context->id, 'enrol_openlml')) {
-            print($this->errorlogtag . 'could not assign role (' . $role->id . ') to user (' .
+        if (!role_assign($this->config->teachers_course_role, $user->id, $cat_obj->context->id, 'enrol_openlml')) {
+            print($this->errorlogtag . 'could not assign role (' . $this->config->teachers_course_role . ') to user (' .
                     $user->idnumber . ') in context (' . $cat_obj->context->id . ').');
             return false;
         }

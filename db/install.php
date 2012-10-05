@@ -32,7 +32,7 @@ function xmldb_enrol_openlml_install() {
     echo 'move old coursecreator assignments from lml to enrol_openlml';
     $role = $DB->get_record('role', array('shortname'=>'coursecreator'));
     if ($role) {
-        $records = $DB->get_recordset_select('role_assignments', array('roleid'=>$role->id, 'component'=>'lml');
+        $records = $DB->get_recordset_select('role_assignments', array('roleid'=>$role->id, 'component'=>'lml'));
         foreach ($records as $record) {
             $record->component = 'enrol_openlml';
         }

@@ -349,7 +349,7 @@ class enrol_openlml_plugin extends enrol_plugin {
      * @returns void
      */
     public function update_city(&$user) {
-        global $CFG,$DB;
+        global $DB;
 
         if ($this->verbose) {
             print($this->errorlogtag . 'update_city(' . $user . ') called.' . "\n");

@@ -104,7 +104,7 @@ if ($ADMIN->fulltree) {
             get_string('students_settings', 'enrol_openlml'), ''));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/student_class_numbers',
             get_string('student_class_numbers_key', 'enrol_openlml'),
-            get_string('student_class_numbers', 'enrol_openlml'), '5,6,7,8,9,10,11,12,extra'));
+            get_string('student_class_numbers', 'enrol_openlml'), '5,6,7,8,9,10,11,12'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/student_groups',
             get_string('student_groups_key', 'enrol_openlml'), get_string('student_groups', 'enrol_openlml'), ''));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/student_project_prefix',

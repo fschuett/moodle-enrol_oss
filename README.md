@@ -26,5 +26,20 @@ Dependencies
 This module needs the Auth-Plugin auth_ldap and the enrolment plugin
 enrol_cohort to be active to work properly.
 
+Cron-Job
+--------
+This module is processed by cron on an hourly basis, as is enrol_cohort 
+equally.
+The module auth_ldap is not automatically processed by cron. You can
+either set up a job yourself as described in 
+/auth/ldap/cli/sync_user.php
+or you include auth_ldap in the hourly job. For this to work you must
+use the patch for auth_ldap:
+cd /auth/ldap
+patch <../../enrol/openlml/auth_ldap.patch
+The patch adds a cron() method to the auth_ldap plugin that is 
+executed once an hour.
+
+
 Hildesheim, Germany
 Frank Schütte,2012(fschuett@gymnasium-himmelsthuer.de)

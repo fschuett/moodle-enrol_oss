@@ -25,6 +25,8 @@
 
 $string['attribute'] = 'group name attribute usual cn';
 $string['attribute_key'] = 'group name attribute';
+$string['city'] = 'location of the institute to fill city field missing from ldap';
+$string['city_key'] = 'city';
 $string['common_settings'] = 'LDAP settings';
 $string['contexts'] = 'one or more LDAP contexts separated by semicolon(;)';
 $string['contexts_key'] = 'contexts';

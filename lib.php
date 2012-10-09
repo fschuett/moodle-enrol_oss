@@ -156,7 +156,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                         'parent'=>$this->teacher_obj->id),'*',IGNORE_MULTIPLE)) {
                     if ($DB->count_records('course_categories', array('name'=>$user->idnumber,
                 	    'parent'=>$this->teacher_obj->id)) > 1) {
-                	print($this->errorlogtag . ' WARNING: there are more than one matching category named '. 
+                	print($this->errorlogtag . ' WARNING: there are more than one matching category named '.
                 		$user->idnumber .' in '.$this->teacher_obj->name .". That is likely to cause problems.\n");
             	    }
                     if (!move_category($cat, $this->attic_obj)) {
@@ -181,7 +181,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                     }
                 } else if ($DB->count_records('course_categories', array('name'=>$user->idnumber,
             		'parent'=>$this->teacher_obj->id)) > 1) {
-            	    print($this->errorlogtag . ' WARNING: there are more than one matching category named '. 
+            	    print($this->errorlogtag . ' WARNING: there are more than one matching category named '.
         		    $user->idnumber .' in '.$this->teacher_obj->name .". That is likely to cause problems.\n");
             	}
             }
@@ -189,6 +189,11 @@ class enrol_openlml_plugin extends enrol_plugin {
                 $this->resort_categories($this->teacher_obj->id);
             }
         }
+
+        if (!empty($this->config->city)) {
+            $this->update_city($user);
+        }
+
         if ($this->verbose) {
             print($this->errorlogtag . 'sync_user_enrolments returns' . "\n");
         }
@@ -319,9 +324,9 @@ class enrol_openlml_plugin extends enrol_plugin {
                     $edited = true;
                 } else if ($DB->count_records('course_categories',
                         array('name'=>$teacher, 'parent' => $this->teacher_obj->id)) > 1) {
-            	    print($this->errorlogtag . ' WARNING: there are more than one matching category named '. 
+            	    print($this->errorlogtag . ' WARNING: there are more than one matching category named '.
         		    $teacher .' in '.$this->teacher_obj->name .". That is likely to cause problems.\n");
-            	    
+
                 }
             }
         }
@@ -331,7 +336,46 @@ class enrol_openlml_plugin extends enrol_plugin {
 
         $this->sync_cohort_enrolments();
 
+        if (!empty($this->config->city)) {
+            $this->update_city();
+        }
         return true;
+    }
+
+    /**
+     * This function checks all users created by auth ldap and updates the city field.
+     * The config value $this->config->city must be non empty.
+     * @uses DB,CFG
+     * @returns void
+     */
+    public function update_city(&$user) {
+        global $CFG,$DB;
+
+        if ($this->verbose) {
+            print($this->errorlogtag . 'update_city(' . $user . ') called.' . "\n");
+        }
+
+        if (empty($user)) {
+            $params = array('auth' => 'ldap', 'city' => '');
+            if (!$DB->set_field('user', 'city', $this->config->city, $params)) {
+                print($this->errorlogtag . "update of city field for many users failed.\n");
+            } else if ($this->verbose) {
+                print($this->errorlogtag . ' updated city field with ' . $this->config->city .
+                        " for many users.\n");
+            }
+        } else {
+            if ($user->city == '') {
+                if (!$DB->set_field('user', 'city', $this->config->city, array('id' => $user->id))) {
+                    print($this->errorlogtag . 'update of city field for user ' . $user->username .
+                            " failed.\n");
+                } else if ($this->verbose) {
+                    print($this->errorlogtag . 'updated city field for user ' . $user->username . "\n");
+                }
+            }
+        }
+        if ($this->verbose) {
+            print($this->errorlogtag . 'update_city(' . $user . ') returns.' . "\n");
+        }
     }
 
     /**

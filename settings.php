@@ -48,6 +48,8 @@ if ($ADMIN->fulltree) {
             get_string('attribute_key', 'enrol_openlml'), get_string('attribute', 'enrol_openlml'), 'cn'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/member_attribute',
             get_string('member_attribute_key', 'enrol_openlml'), get_string('member_attribute', 'enrol_openlml'), 'memberuid'));
+    $settings->add(new admin_setting_configtext('enrol_openlml/city',
+            get_string('city_key', 'enrol_openlml'), get_string('city', 'enrol_openlml'), 'Musterstadt'));
 
     // Teachers settings.
     $settings->add(new admin_setting_heading('enrol_openlml_teacher_settings',

@@ -46,6 +46,9 @@ patch <../../enrol/openlml/auth_ldap.patch
 The patch adds a cron() method to the auth_ldap plugin that is 
 executed once an hour.
 
+Changelog
+---------
+Added code to automatically update city value in moodle users database.
 
 Hildesheim, Germany
 Frank Schütte,2012(fschuett@gymnasium-himmelsthuer.de)

@@ -48,7 +48,8 @@ executed once an hour.
 
 Changelog
 ---------
-Added code to automatically update city value in moodle users database.
+Added code to automatically update city value from global defaultcity
+in moodle users database.
 
 Hildesheim, Germany
 Frank Schütte,2012(fschuett@gymnasium-himmelsthuer.de)

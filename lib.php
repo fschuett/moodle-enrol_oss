@@ -93,12 +93,13 @@ class enrol_openlml_plugin extends enrol_plugin {
     /**
      * Forces synchronisation of user enrolments with Open LML server.
      * It creates cohorts, removes cohorts and adds/removes course categories.
-     *
+     * 
+     * @uses DB,CFG
      * @param object $user user record
      * @return void
      */
     public function sync_user_enrolments($user) {
-        global $DB;
+        global $DB,$CFG;
 
         if ($this->verbose) {
             print($this->errorlogtag . 'sync_user_enrolments called' . "\n");
@@ -190,7 +191,7 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
         }
 
-        if (!empty($this->config->city)) {
+        if (!empty($CFG->defaultcity)) {
             $this->update_city($user);
         }
 
@@ -205,6 +206,7 @@ class enrol_openlml_plugin extends enrol_plugin {
      * autocreate/autoremove of teacher course categories based on
      * the settings and the contents of the Open LML server.
      * @return boolean
+     * @uses DB,CFG
      */
     public function sync_enrolments() {
         global $CFG, $DB;
@@ -336,7 +338,7 @@ class enrol_openlml_plugin extends enrol_plugin {
 
         $this->sync_cohort_enrolments();
 
-        if (!empty($this->config->city)) {
+        if (!empty($CFG->defaultcity)) {
             $this->update_city();
         }
         return true;
@@ -344,12 +346,12 @@ class enrol_openlml_plugin extends enrol_plugin {
 
     /**
      * This function checks all users created by auth ldap and updates the city field.
-     * The config value $this->config->city must be non empty.
+     * The config value $CFG->defaultcity must be non empty.
      * @uses DB,CFG
      * @returns void
      */
     public function update_city(&$user) {
-        global $DB;
+        global $DB,$CFG;
 
         if ($this->verbose) {
             print($this->errorlogtag . 'update_city(' . $user . ') called.' . "\n");
@@ -357,15 +359,15 @@ class enrol_openlml_plugin extends enrol_plugin {
 
         if (empty($user)) {
             $params = array('auth' => 'ldap', 'city' => '');
-            if (!$DB->set_field('user', 'city', $this->config->city, $params)) {
+            if (!$DB->set_field('user', 'city', $CFG->defaultcity, $params)) {
                 print($this->errorlogtag . "update of city field for many users failed.\n");
             } else if ($this->verbose) {
-                print($this->errorlogtag . ' updated city field with ' . $this->config->city .
+                print($this->errorlogtag . ' updated city field with ' . $CFG->defaultcity .
                         " for many users.\n");
             }
         } else {
             if ($user->city == '') {
-                if (!$DB->set_field('user', 'city', $this->config->city, array('id' => $user->id))) {
+                if (!$DB->set_field('user', 'city', $CFG->defaultcity, array('id' => $user->id))) {
                     print($this->errorlogtag . 'update of city field for user ' . $user->username .
                             " failed.\n");
                 } else if ($this->verbose) {

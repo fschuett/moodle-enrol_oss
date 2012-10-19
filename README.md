@@ -39,7 +39,7 @@ either set up a job yourself as described in
 or you include auth_ldap in the hourly job. For this to work you must
 use the patch for auth_ldap:
 
-cd /auth/ldap
+cd <moodledir>/auth/ldap
 
 patch <../../enrol/openlml/auth_ldap.patch
 
@@ -48,6 +48,15 @@ executed once an hour.
 
 Changelog
 ---------
+2012-10-19
+Fixed course sortorder, 
+removed unnecessary setting,
+fixed spelling error authldap,
+added upgrade.php from previous version,
+fixed install.php,
+fixed cron patch for auth_ldap to run once an hour.
+
+2012-10-10
 Added code to automatically update city value from global defaultcity
 in moodle users database.
 

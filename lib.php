@@ -31,8 +31,6 @@
 defined('MOODLE_INTERNAL') || die();
 
 class enrol_openlml_plugin extends enrol_plugin {
-    // Idnumber: Moodle "Kurs-ID".
-    protected $enrol_localcoursefield = 'idnumber';
     protected $enroltype = 'enrol_openlml';
     protected $errorlogtag = '[ENROL OPENLML] ';
     protected $teacher_array=Array();
@@ -93,7 +91,7 @@ class enrol_openlml_plugin extends enrol_plugin {
     /**
      * Forces synchronisation of user enrolments with Open LML server.
      * It creates cohorts, removes cohorts and adds/removes course categories.
-     * 
+     *
      * @uses DB,CFG
      * @param object $user user record
      * @return void
@@ -479,13 +477,13 @@ class enrol_openlml_plugin extends enrol_plugin {
         if ($this->verbose) {
             print($this->errorlogtag . 'ldap_get_grouplist called' . "\n");
         }
-        if (!isset($ldapauth) or empty($ldapauth)) {
-            $ldapauth = get_auth_plugin('ldap');
+        if (!isset($authldap) or empty($authldap)) {
+            $authldap = get_auth_plugin('ldap');
             if ($this->verbose) {
                 print($this->errorlogtag . "auth plugin loaded\n");
             }
         }
-        $ldapconnection = $ldapauth->ldap_connect();
+        $ldapconnection = $authldap->ldap_connect();
 
         $fresult = array ();
         if ($userid !== "*") {
@@ -508,7 +506,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                 continue;
             }
 
-            if ($ldapauth->config->search_sub) {
+            if ($authldap->config->search_sub) {
                 // Use ldap_search to find first group from subtree.
                 $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
                     $this->config->attribute
@@ -527,7 +525,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                 array_push($fresult, ($groups[$i][$this->config->attribute][0]));
             }
         }
-        $ldapauth->ldap_close();
+        $authldap->ldap_close();
         // Remove teachers from all but teachers groups.
         if ($userid != "*" AND $this->is_teacher($userid)) {
             foreach ($fresult as $i => $group) {
@@ -554,13 +552,13 @@ class enrol_openlml_plugin extends enrol_plugin {
         }
         $ret = array ();
         $members = array ();
-        if (!isset($ldapauth) or empty($ldapauth)) {
-            $ldapauth = get_auth_plugin('ldap');
+        if (!isset($authldap) or empty($authldap)) {
+            $authldap = get_auth_plugin('ldap');
             if ($this->verbose) {
                 print($this->errorlogtag . "auth plugin loaded\n");
             }
         }
-        $ldapconnection = $ldapauth->ldap_connect();
+        $ldapconnection = $authldap->ldap_connect();
 
         $textlib = textlib_get_instance();
         $group = $textlib->convert($group, 'utf-8', $this->config->ldapencoding);
@@ -599,7 +597,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         if ($this->verbose) {
             print($this->errorlogtag . "ldap_get_group_members returns " . $members . "\n");
         }
-        $ldapauth->ldap_close();
+        $authldap->ldap_close();
         foreach ($members as $member) {
             $params = array (
                 'username' => $member
@@ -770,7 +768,7 @@ class enrol_openlml_plugin extends enrol_plugin {
     /**
      * This function checks and creates the teacher category.
      *
-     * @uses $CFG
+     * @uses $CFG,$DB
      */
     private function get_teacher_category() {
         global $CFG, $DB;
@@ -781,19 +779,11 @@ class enrol_openlml_plugin extends enrol_plugin {
                 print($this->errorlogtag . 'creating non-existing teachers course category ' .
                         $this->config->teachers_course_context . "\n");
             }
-            $newcategory = new stdClass();
-            $newcategory->name = $this->config->teachers_course_context;
-            $newcategory->description = get_string('teacher_context_desc', 'enrol_openlml');
-            $newcategory->sortorder = 999;
-            $newcategory->parent = 0; // Top level category.
-            if (!$DB->insert_record('course_categories', $newcategory)) {
-                print($this->errorlogtag . 'could not insert the new category ' . $newcategory->name . "\n");
+            $cat_obj = $this->create_category($this->config->teachers_course_context,
+                    get_string('teacher_context_desc', 'enrol_openlml'));
+            if (!$cat_obj) {
+                print($this->errorlogtag . 'autocreate/autoremove could not create teacher course context' . "\n");
             }
-            $cat_obj = $DB->get_record( 'course_categories',
-                    array('name'=>$this->config->teachers_course_context, 'parent' => 0),'*',IGNORE_MULTIPLE);
-        }
-        if (!$cat_obj) {
-            print($this->errorlogtag . 'autocreate/autoremove could not create teacher course context' . "\n");
         }
         return $cat_obj;
     }
@@ -801,7 +791,7 @@ class enrol_openlml_plugin extends enrol_plugin {
     /**
      * This function checks and creates the teacher attic category.
      *
-     * @uses $CFG
+     * @uses $CFG,$DB
      */
     private function get_teacher_attic_category() {
         global $CFG, $DB;
@@ -810,16 +800,8 @@ class enrol_openlml_plugin extends enrol_plugin {
             if ($this->verbose) {
                 print($this->errorlogtag . 'creating non-existing removed teachers category ' . $this->config->teachers_removed . "\n");
             }
-            $newcategory = new stdClass();
-            $newcategory->name = $this->config->teachers_removed;
-            $newcategory->description = get_string('attic_description', 'enrol_openlml');
-            $newcategory->sortorder = 999;
-            $newcategory->parent = 0; // Top level category.
-            if (!$DB->insert_record('course_categories', $newcategory)) {
-                print($this->errorlogtag . 'Could not insert the new category ' . $newcategory->name . "\n");
-            }
-            $this->attic_obj = $DB->get_record( 'course_categories',
-                    array('name' => $this->config->teachers_removed, 'parent' => 0),'*',IGNORE_MULTIPLE);
+            $this->attic_obj = $this->create_category($this->config->teachers_removed,
+                    get_string('attic_description', 'enrol_openlml'));
             if (!$this->attic_obj) {
                 print($this->errorlogtag .'autocreate/autoremove could not create removed teachers context' . "\n");
             }
@@ -872,21 +854,19 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!isset($this->teacher_obj)) {
             $this->teacher_obj = $this->get_teacher_category();
         }
-        $cat_obj = $DB->get_record('course_categories', array('name'=>$user->idnumber, 'parent' => $this->attic_obj->id),'*',IGNORE_MULTIPLE);
+        $cat_obj = $DB->get_record('course_categories', array('name'=>$user->idnumber, 'parent' => $this->attic_obj->id),
+                '*',IGNORE_MULTIPLE);
         if ($cat_obj) {
             if (!move_category($cat_obj, $this->teacher_obj)) {
-                print($this->errorlogtag . 'could not move teacher category ' . $cat_obj->name . ' for user ' . $user->idnumber . ' back from attic.' . "\n");
+                print($this->errorlogtag . 'could not move teacher category ' . $cat_obj->name . ' for user ' .
+                        $user->idnumber . ' back from attic.' . "\n");
                 return false;
             }
         } else {
-            $cat_obj = new stdClass();
-            $cat_obj->name = $cat_obj->idnumber = $user->username;
-            $cat_obj->description = get_string('course_description', 'enrol_openlml') . ' ' .
+            $description = get_string('course_description', 'enrol_openlml') . ' ' .
                     $user->firstname . ' ' .$user->lastname . '(' . $user->idnumber. ').';
-            $cat_obj->parent = $this->teacher_obj->id; // Top level category.
-            $cat_obj->depth = $this->teacher_obj->depth+1;
-            if (!$cat_obj->id = $DB->insert_record('course_categories', $cat_obj)) {
-                print($this->errorlogtag . "Could not insert the new teacher course category '$cat_obj->name' ". $cat_obj->name . "\n");
+            $cat_obj = $this->create_category($user->username, $description, $teacher_obj);
+            if (!$cat_obj) {
                 return false;
             }
         }
@@ -908,6 +888,50 @@ class enrol_openlml_plugin extends enrol_plugin {
             return false;
         }
         return true;
+    }
+
+    /**
+     * This function creates a course category and fixes the category path.
+     * name             the new category name
+     * description      a descriptive text for the new course category
+     * parent           the course_categories parent object or 0 for top level category
+     * sortorder        special sort order, 999 order at end
+     * @return          false|category_object
+     * @uses            $DB;
+     */
+    public function create_category ($name, $description, $parent = 0, $sortorder = 999) {
+        global $DB;
+        if(isempty($name) || isempty($parent)) {
+            print($this->errorlogtag . 'Could not create category: Category name ' .
+                    $name . ' or parent category ' . $parent . ' is empty.' . "\n");
+            return false;
+        }
+        $cat = new stdClass();
+        $cat->name = $cat->idnumber = $name;
+        $cat->description = $description;
+        $cat->sortorder = $sortorder;
+        if ($parent == 0) {
+            $cat->parent = 0;
+            $cat->depth = 1;
+        } else {
+            $cat->parent = $parent->id; // Parent category.
+            $cat->depth = $parent->depth+1;
+        }
+        if (!$cat->id = $DB->insert_record('course_categories', $cat)) {
+            print($this->errorlogtag . 'Could not insert the new course category ' . $cat->name . "\n");
+            return false;
+        }
+        if ($parent == 0) {
+            $cat->path = '/' . $cat->id;
+        } else {
+            $cat->path = $parent->path . '/' . $cat->id;
+        }
+        if (!$DB->update_record('course_categories', $cat)) {
+            print($this->errorlogtag . 'Could not update the new course categories ' .
+                    $cat->name . ' path ' . $cat->path . "\n");
+            return false;
+        }
+        return $cat;
     }
 
     public function test_sync_user_enrolments($userid) {

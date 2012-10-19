@@ -28,19 +28,23 @@ defined('MOODLE_INTERNAL') || die();
 function xmldb_enrol_openlml_install() {
     global $CFG, $DB;
 
+    require_once($CFG->libdir . '/accesslib.php');
+    
     // Move coursecreator roles from lml to enrol_openlml.
-    echo 'move old coursecreator assignments from lml to enrol_openlml';
+    echo "move old coursecreator assignments from lml to enrol_openlml\n";
     $role = $DB->get_record('role', array('shortname'=>'coursecreator'));
     if ($role) {
-        $records = $DB->get_recordset_select('role_assignments', array('roleid'=>$role->id, 'component'=>'lml'));
-        foreach ($records as $record) {
-            $record->component = 'enrol_openlml';
+        if($records = $DB->get_recordset_select('role_assignments', "(roleid='" . $role->id . "' and component='lml')")) {
+            foreach ($records as $record) {
+                $record->component = 'enrol_openlml';
+            }
+            $records->close();
         }
-        $records->close();
     }
 
     // Remove role assignments lml.
-    echo 'remove all remaining lml assignments';
-    $DB->role_unassign_all(array('component'=>'lml'), true);
+    echo "remove all remaining lml assignments\n";
+    $DB->delete_records('role_assignments', array('component'=>'lml'));
 
+    return true;
 }

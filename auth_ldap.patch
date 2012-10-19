@@ -1,7 +1,6 @@
-diff -up ./auth.php.orig ./auth.php
---- ./auth.php.orig     2012-08-24 02:04:53.000000000 +0200
-+++ ./auth.php  2012-10-08 20:21:48.000000000 +0200
-@@ -598,6 +598,30 @@ class auth_plugin_ldap extends auth_plug
+--- auth.php.orig	2012-08-24 02:04:53.000000000 +0200
++++ auth.php	2012-10-19 09:18:01.000000000 +0200
+@@ -598,6 +598,30 @@
      }
  
      /**
@@ -11,20 +10,20 @@ diff -up ./auth.php.orig ./auth.php
 +    public function cron() {
 +        global $CFG;
 +
-+       if (!isset($this->config->last_cron)) {
-+           set_config('auth_ldap','last_cron', 0);
-+       }
++        $this->auth_plugin_ldap();
++        if (!isset($this->config->last_cron)) {
++            set_config('last_cron', 0, $this->pluginconfig);
++        }
 +
-+       // notify once an hour only
-+       if ($this->config->last_cron == date('Ymdh')) {
-+           return;
-+       }
++        // notify once an hour only
++        if ($this->config->last_cron == date('Ymdh')) {
++            return;
++        }
 +
 +        print("Starting synchronization for for ldap auth plugin...");
 +        $this->sync_users(true);
 +        print("finished.\n");
-+        
-+        set_config('auth_ldap','last_cron', date('Ymdh'));
++        set_config('last_cron', date('Ymdh'), $this->pluginconfig);
 +
 +    }
 +

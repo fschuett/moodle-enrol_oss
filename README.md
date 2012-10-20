@@ -48,6 +48,10 @@ executed once an hour.
 
 Changelog
 ---------
+2012-10-20
+Added missing string.
+fixed create_category.
+
 2012-10-19
 Fixed course sortorder, 
 removed unnecessary setting,

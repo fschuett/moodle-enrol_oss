@@ -23,6 +23,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+$string['attic_description'] = 'Deleted teachers category';
 $string['attribute'] = 'group name attribute usual cn';
 $string['attribute_key'] = 'group name attribute';
 $string['common_settings'] = 'LDAP settings';

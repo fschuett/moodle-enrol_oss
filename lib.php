@@ -138,6 +138,9 @@ class enrol_openlml_plugin extends enrol_plugin {
 
         // Autocreate/autoremove teacher category.
         if ($this->config->teachers_category_autocreate OR $this->config->teachers_category_autoremove) {
+            if ($this->verbose) {
+                print($this->errorlogtag . 'autocreate/autoremove teacher category for teacher ' . $user->username);
+            }
             if (!isset($this->teacher_obj)) {
                 $this->teacher_obj = $this->get_teacher_category();
             }
@@ -149,6 +152,9 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
 
             $edited = false;
+            if ($this->verbose) {
+                print($this->errorlogtag . 'Testing for autoremove. ');
+            }
             if ($this->config->teachers_category_autoremove AND
                   (!$this->is_teacher($user->idnumber) OR $this->is_ignored_teacher($user->idnumber))) {
                 if ($category = $DB->get_record('course_categories', array('name'=>$user->idnumber,
@@ -166,10 +172,19 @@ class enrol_openlml_plugin extends enrol_plugin {
                     $edited = true;
                 }
             }
+            if ($this->verbose) {
+                print($this->errorlogtag . 'Testing for autocreate. ');
+            }
             if ($this->config->teachers_category_autocreate AND
                 $this->is_teacher($user->idnumber) AND !$this->is_ignored_teacher($user->idnumber)) {
+                if ($this->verbose) {
+                    print($this->errorlogtag . 'The teacher ' . $user->username . ' needs a course category.');
+                }
                 if (!$DB->get_record('course_categories', array('name'=>$user->idnumber,
                         'parent'=> $this->teacher_obj->id),'*',IGNORE_MULTIPLE)) {
+                    if ($this->verbose) {
+                        print($this->errorlogtag . 'The teacher ' . $user->username . ' has no course category.');
+                    }
                     if (!$this->teacher_add_category($user)) {
                         print($this->errorlogtag . 'autocreate teacher category failed: ' . $user->username . "\n");
                     } else {
@@ -184,13 +199,12 @@ class enrol_openlml_plugin extends enrol_plugin {
         		    $user->idnumber .' in '.$this->teacher_obj->name .". That is likely to cause problems.\n");
             	}
             }
+            if ($this->verbose) {
+                print($this->errorlogtag . 'Resorting is necessary: ' . $edited);
+            }
             if ($edited) {
                 $this->resort_categories($this->teacher_obj->id);
             }
-        }
-
-        if (!empty($CFG->defaultcity)) {
-            $this->update_city($user);
         }
 
         if ($this->verbose) {
@@ -848,6 +862,9 @@ class enrol_openlml_plugin extends enrol_plugin {
      */
     private function teacher_add_category(&$user) {
         global $CFG, $DB;
+        if ($this->verbose) {
+            print($this->errorlogtag . 'Adding teacher category for teacher ' . $user->username . "\n");
+        }
         if (!isset($this->attic_obj)) {
             $this->attic_obj = $this->get_teacher_attic_category();
         }
@@ -865,7 +882,10 @@ class enrol_openlml_plugin extends enrol_plugin {
         } else {
             $description = get_string('course_description', 'enrol_openlml') . ' ' .
                     $user->firstname . ' ' .$user->lastname . '(' . $user->idnumber. ').';
-            $cat_obj = $this->create_category($user->username, $description, $teacher_obj);
+            if ($this->verbose) {
+                print($this->errorlogtag . 'Calling create_category for ' . $user->username . ' with description ' . $description . "\n");
+            }
+            $cat_obj = $this->create_category($user->username, $description, $this->teacher_obj);
             if (!$cat_obj) {
                 return false;
             }
@@ -895,16 +915,19 @@ class enrol_openlml_plugin extends enrol_plugin {
      * name             the new category name
      * description      a descriptive text for the new course category
      * parent           the course_categories parent object or 0 for top level category
-     * sortorder        special sort order, 999 order at end
+     * sortorder        special sort order, 99999 order at end
      * @return          false|category_object
      * @uses            $DB;
      */
-    public function create_category ($name, $description, $parent = 0, $sortorder = 999) {
+    public function create_category ($name, $description, $parent = 0, $sortorder = 99999) {
         global $DB;
-        if(isempty($name) || isempty($parent)) {
+        if(empty($name)) {
             print($this->errorlogtag . 'Could not create category: Category name ' .
-                    $name . ' or parent category ' . $parent . ' is empty.' . "\n");
+                    $name . ' is empty.' . "\n");
             return false;
+        }
+        if ($this->verbose) {
+            print($this->errorlogtag . ' Creating category ' . $name);
         }
         $cat = new stdClass();
         $cat->name = $cat->idnumber = $name;

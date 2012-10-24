@@ -47,6 +47,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         require_once($CFG->libdir . '/accesslib.php');
         require_once($CFG->libdir . '/ldaplib.php');
         require_once($CFG->libdir . '/moodlelib.php');
+        require_once($CFG->libdir . '/enrollib.php');
         require_once($CFG->libdir . '/dml/moodle_database.php');
         require_once($CFG->dirroot . '/group/lib.php');
         require_once($CFG->dirroot . '/cohort/lib.php');
@@ -394,6 +395,8 @@ class enrol_openlml_plugin extends enrol_plugin {
 
     /**
      * This function checks all courses and enrols cohorts that are listed in the course id number.
+     * The idnumber should contain shortname ':' class1,class2,... because the idnumber is a
+     * unique key.
      * @uses DB
      * @returns void
      */
@@ -410,7 +413,23 @@ class enrol_openlml_plugin extends enrol_plugin {
         }
         $courses = $DB->get_recordset_select('course', "idnumber != ''");
         foreach ($courses as $course) {
-            $groups = explode(',', $course->idnumber);
+            if ($this->verbose) {
+                print($this->errorlogtag . 'course shortname(' . $course->shortname .
+                        ') idnumber('. $course->idnumber . ")\n");
+            }
+            if ((strpos($course->idnumber, $course->shortname . ':')) === 0) {
+                $groups = explode(',', substr($course->idnumber, strlen($course->shortname . ':')));
+            }
+            else if (($pos=strpos($course->idnumber, ':')) !== false) {
+                $groups = explode(',', substr($course->idnumber, $pos+1));
+                $DB->set_field('course', 'idnumber',
+                        $course->shortname . ':' . implode($groups), array('id'=>$course->id));
+            }
+            else {
+                $DB->set_field('course', 'idnumber',
+                        $course->shortname . ':' . $course->idnumber, array('id'=>$course->id));
+                $groups = explode(',', $course->idnumber);
+            }
             if ($this->verbose) {
                 print($this->errorlogtag . 'groups ' . $groups . "\n");
             }
@@ -419,6 +438,9 @@ class enrol_openlml_plugin extends enrol_plugin {
                 print($this->errorlogtag . 'enrol plugin instances ' . $cohorts . "\n");
             }
             foreach ($groups as $group) {
+                if ($this->verbose) {
+                    print($this->errorlogtag . ' is group ' . $group . ' enroled?' . "\n");
+                }
                 if (!isset($cohorts[$group]) AND $cohortid=$this->get_cohort_id($group, false)) {
                     if ($this->has_teachers_as_members($group)) {
                         $enrol->add_instance($course,
@@ -433,11 +455,25 @@ class enrol_openlml_plugin extends enrol_plugin {
                     $edited = true;
                 }
             }
+
             foreach ($cohorts as $cohort) {
+                if ($this->verbose) {
+                    print($this->errorlogtag . ' is cohort ' . $cohort->idnumber . ' still necessary?' . "\n");
+                }
                 if (!in_array($cohort->idnumber, $groups)) {
-                    delete_instance($cohort->id);
+                    $instances = enrol_get_instances($course->id, false);
                     if ($this->verbose) {
-                        print($this->errorlogtag . 'remove cohort ' . $group . ' from course ' . $course->name . "\n");
+                        print($this->errorlogtag . 'enrolment instances ' . $instances . "\n");
+                    }
+                    foreach ($instances as $instance) {
+                        if ($instance->enrol == 'cohort' AND $instance->customint1 == $cohort->id) {
+                            if ($this->verbose) {
+                                print($this->errorlogtag . 'remove cohort ' . $cohort->idnumber . ' from course ' . $course->shortname . "\n");
+                            }
+                            $plugin = enrol_get_plugin($instance->enrol);
+                            $plugin->delete_instance($instance);
+                            break;
+                        }
                     }
                     $edited = true;
                 }
@@ -709,9 +745,13 @@ class enrol_openlml_plugin extends enrol_plugin {
 
     private function has_teachers_as_members($group) {
         global $CFG;
-        if (!empty($this->config->prefix_teacher_members) AND
-              (strpos($group, $this->config->prefix_teacher_members) === 0)) {
-            return true;
+        if (!empty($this->config->prefix_teacher_members)) {
+            $ar = explode(',', $this->config->prefix_teacher_members);
+            foreach ($ar as $prefix) {
+                if (strpos($group, $prefix) === 0) {
+                    return true;
+                }
+            }
         }
         if ($group == $this->config->teachers_group_name) {
             return true;
@@ -731,7 +771,12 @@ class enrol_openlml_plugin extends enrol_plugin {
             print($this->errorlogtag . ' generate_class_pattern called' . "\n");
         }
         $pattern[] = '(' . $this->config->attribute . '=' . $this->config->teachers_group_name .')';
-        $pattern[] = '(' . $this->config->attribute . '=' . $this->config->prefix_teacher_members .'*)';
+        if (!empty($this->config->prefix_teacher_members)) {
+            $classes = explode(',', $this->config->prefix_teacher_members);
+            foreach ($classes as $c) {
+                $pattern[] = '(' . $this->config->attribute . '=' . $c . '*)';
+            }
+        }
         $classes = explode(',', $this->config->student_class_numbers);
         foreach ($classes as $c) {
             $pattern[] = '(' . $this->config->attribute . '=' . $c . '*)';

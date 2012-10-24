@@ -1,15 +1,15 @@
 moodle-enrol_openlml
 ====================
 
-enrolment plugin for moodle from 2.x to autoenrol in 
+enrolment plugin for moodle from 2.x to autoenrol in
 conjunction with the open linux Musterlösungplugin enrol_openlml.
 
 This module superseedes the module enrol_lml(Moodle 1.x).
 It is supposed to work with the
 
-Linux Musterlösung(paedML) Ba-Wü Germany 
+Linux Musterlösung(paedML) Ba-Wü Germany
 
-and with the 
+and with the
 
 Open Linux Musterlösung(openLML) http://www.linuxmuster.net
 
@@ -28,11 +28,11 @@ enrol_cohort to be active to work properly.
 
 Cron-Job
 --------
-This module is processed by cron on an hourly basis, as is enrol_cohort 
+This module is processed by cron on an hourly basis, as is enrol_cohort
 equally.
 
 The module auth_ldap is not automatically processed by cron. You can
-either set up a job yourself as described in 
+either set up a job yourself as described in
 
 /auth/ldap/cli/sync_user.php
 
@@ -43,17 +43,18 @@ cd <moodledir>/auth/ldap
 
 patch <../../enrol/openlml/auth_ldap.patch
 
-The patch adds a cron() method to the auth_ldap plugin that is 
+The patch adds a cron() method to the auth_ldap plugin that is
 executed once an hour.
 
 Changelog
 ---------
-2012-10-20
-Added missing string.
-fixed create_category.
+2012-10-24
+course->idnumber is a unique key, so make
+ course->idnumber unique by prepending 'shortname:'.
+prefix_teacher_members is now a comma separated list.
 
 2012-10-19
-Fixed course sortorder, 
+Fixed course sortorder,
 removed unnecessary setting,
 fixed spelling error authldap,
 added upgrade.php from previous version,

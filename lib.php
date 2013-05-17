@@ -363,7 +363,7 @@ class enrol_openlml_plugin extends enrol_plugin {
      * @uses DB,CFG
      * @returns void
      */
-    public function update_city(&$user) {
+    public function update_city(&$user = NULL) {
         global $DB,$CFG;
 
         if ($this->verbose) {

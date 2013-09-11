@@ -48,6 +48,9 @@ executed once an hour.
 
 Changelog
 ---------
+2013-09-13
+Fix added parameter to enrol_cohort_sync in Moodle 2.5.
+
 2012-10-24
 course->idnumber is a unique key, so make
  course->idnumber unique by prepending 'shortname:'.

@@ -27,7 +27,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->version   = 2013091300;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2010112400;        // Requires this Moodle version.
+$plugin->requires  = 2013040500;        // Requires this Moodle version.
 $plugin->component = 'enrol_openlml';   // Full name of the plugin (used for diagnostics).
 $plugin->cron      = 60*60;             // Run cron every hour, because it is time consuming.
 $plugin->maturity  = MATURITY_BETA;     // Beta, nees testing.

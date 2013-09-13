@@ -46,7 +46,7 @@ require(dirname(dirname(dirname(dirname(__FILE__)))).'/config.php');
 require_once($CFG->libdir.'/clilib.php');
 
 // Now get cli options.
-list($options, $unrecognized) = cli_get_params(array('verbose'=>false, 'help'=>false), array('v'=>'verbose', 'h'=>'help'));
+list($options, $unrecognized) = cli_get_params(array('help'=>false), array('h'=>'help'));
 
 if ($unrecognized) {
     $unrecognized = implode("\n  ", $unrecognized);
@@ -59,7 +59,6 @@ if ($options['help']) {
 The enrol_openlml plugin must be enabled and properly configured.
 
 Options:
--v, --verbose         Print verbose progess information
 -h, --help            Print out this help
 
 Example:
@@ -89,11 +88,10 @@ if (!enrol_is_enabled('openlml')) {
     die;
 }
 
-$verbose = !empty($options['verbose']);
 $result = 0;
 
 // Update enrolments.
 $enrol = enrol_get_plugin('openlml');
-$result = $enrol->enrol_openlml_sync($verbose);
+$result = $enrol->enrol_openlml_sync();
 
 exit($result);

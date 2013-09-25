@@ -48,6 +48,9 @@ executed once an hour.
 
 Changelog
 ---------
+2013-09-25
+Fix null_progress_trace
+
 2013-09-13
 Fix added parameter to enrol_cohort_sync in Moodle 2.5.
 

@@ -40,5 +40,26 @@ function xmldb_enrol_openlml_upgrade($oldversion) {
 
         upgrade_plugin_savepoint(true, 2012101900, 'enrol', 'openlml');
     }
+
+    if ($oldversion < 2013100500) {
+        // Teacher category sortorder must be resorted
+        require_once($CFG->libdir . '/coursecatlib.php');
+        $teachercontext = get_config('enrol_openlml', 'teachers_course_context');
+        if ($teachercontext) {
+            $teachercat = $DB->get_record( 'course_categories', array('name'=>$teachercontext, 'parent' => 0),'*',IGNORE_MULTIPLE);
+            if ($teachercat) {
+                $teachercat = coursecat::get($teachercat->id);
+                if ($categories = $teachercat->get_children()) {
+                    $count=$teachercat->sortorder + 1;
+                    foreach ($categories as $cat) {
+                        $DB->set_field('course_categories', 'sortorder', $count, array('id' => $cat->id));
+                        $count++;
+                    }
+                }
+            }
+        }
+
+        upgrade_plugin_savepoint(true, 2013100500, 'enrol', 'openlml');
+    }
     return true;
 }

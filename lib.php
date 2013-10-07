@@ -141,14 +141,14 @@ class enrol_openlml_plugin extends enrol_plugin {
             trigger_error($this->errorlogtag . 'Testing for autoremove. ', E_USER_NOTICE);
             if ($this->config->teachers_category_autoremove AND
                   (!$this->is_teacher($user->idnumber) OR $this->is_ignored_teacher($user->idnumber))) {
-                if ($category = $DB->get_record('course_categories', array('name'=>$user->idnumber,
+                if ($cat = $DB->get_record('course_categories', array('name'=>$user->idnumber,
                         'parent'=>$this->teacher_obj->id),'*',IGNORE_MULTIPLE)) {
                     if ($DB->count_records('course_categories', array('name'=>$user->idnumber,
                 	    'parent'=>$this->teacher_obj->id)) > 1) {
                 	trigger_error($this->errorlogtag . ' There are more than one matching category named '.
                 		$user->idnumber .' in '.$this->teacher_obj->name .". That is likely to cause problems.",E_USER_WARNING);
             	    }
-                    if (!$cat->delete_move($this->attic_obj)) {
+            	    if (!$this->delete_move_teacher_to_attic($cat)) {
                         debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->name . ' to attic.');
                     }
                     trigger_error($this->errorlogtag . 'removed category of removed teacher ' . $cat->name, E_USER_NOTICE);
@@ -174,7 +174,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         		    $user->idnumber .' in '.$this->teacher_obj->name .". That is likely to cause problems.");
             	}
             }
-            trigger_error($this->errorlogtag . 'Resorting is necessary: ' . $edited, E_USER_NOTICE);
+            trigger_error($this->errorlogtag . 'Resorting is ' .($edited? '':'not ') . 'necessary.', E_USER_NOTICE);
             if ($edited) {
                 $this->resort_categories($this->teacher_obj->id);
             }
@@ -260,7 +260,7 @@ class enrol_openlml_plugin extends enrol_plugin {
             if ($categories = $teachercontext->get_children()) {
                 foreach ($categories as $cat) {
                     if (!$this->is_teacher($cat->name) OR $this->is_ignored_teacher($cat->name)) {
-                        if (!$cat->delete_move($this->attic_obj)) {
+                        if (!$this->delete_move_teacher_to_attic($cat)) {
                             debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->name . ' to attic.');
                         }
                         trigger_error($this->errorlogtag . 'removed category of removed teacher ' . $cat->name, E_USER_NOTICE);
@@ -761,6 +761,58 @@ class enrol_openlml_plugin extends enrol_plugin {
 
 
     /**
+     * This function deletes an empty teacher category or moves it to attic if not empty.
+     * @uses $CFG;
+     */
+    private function delete_move_teacher_to_attic($teacher) {
+        global $CFG;
+        require_once($CFG->libdir . '/coursecatlib.php');
+        require_once($CFG->libdir . '/questionlib.php');
+        
+        if (empty($attic_obj)) {
+            $attic_obj = $this->get_teacher_attic_category();
+        }
+        
+        if (empty($teacher)) {
+            debugging($this->errorlogtag . 'delete_move_teacher_to_attic called with empty parameter.');
+            return false;
+        }
+        
+        $deletable = true;
+        if (!$teachercat = coursecat::get($teacher->id)) {
+            debugging($this->errorlotag . "delete_move_teacher_to_attic could not get category $teacher.");
+            return false;
+        }
+        
+        if (!$teachercontext = context_coursecat::instance($teachercat->id)) {
+            debugging($this->errorlogtag . "delete_move_teacher_to_attic could not get category context for category $teachercat.");
+            return false;
+        }
+        
+        if ($teachercat->has_children()) {
+            $deletable = false;
+        }
+        if ($teachercat->has_courses()) {
+            $deletable = false;
+        }
+        if (question_context_has_any_questions($teachercontext)) {
+            $deletable = false;
+        }
+        
+        if ($deletable) {
+            $teachercat->delete_full(true);
+            trigger_error($this->errorlogtag . 'deleting teacher category '.$teacher->id.'.', E_USER_NOTICE);
+        }
+        else {
+            $teachercat->change_parent($this->attic_obj);
+            trigger_error($this->errorlogtag . 'moving teacher category '.$teacher->id.' to attic.',
+                            E_USER_NOTICE);
+        }
+        
+        return true;
+    }
+    
+    /**
      * This function resorts the teacher categories alphabetically.
      *
      */
@@ -774,12 +826,26 @@ class enrol_openlml_plugin extends enrol_plugin {
             return false;
         }
         if ($categories = $teacher_cat->get_children()) {
+            $property = 'name';
+            $sortflag = collatorlib::SORT_STRING;
+            if (!collatorlib::asort_objects_by_property($categories, $property, $sortflag)) {
+                debugging($this->errorlogtag . 'Sorting with asort_objects_by_property error.');
+                return false;
+            }
             $count=$teacher_cat->sortorder + 1;
             foreach ($categories as $cat) {
-                $DB->set_field('course_categories', 'sortorder', $count, array('id' => $cat->id));
-                $count++;
+                if ($cat->sortorder != $count) {
+                    $DB->set_field('course_categories', 'sortorder', $count, array('id' => $cat->id));
+                    context_coursecat::instance($cat->id)->mark_dirty();
+                    trigger_error($this->errorlogtag . 'category('.$cat->name.') got new sortorder('.$count.').',         
+                                    E_USER_NOTICE);
+                    $count++;
+                }
             }
         }
+        context_coursecat::instance($teacher_cat->id)->mark_dirty();
+        cache_helper::purge_by_event('changesincoursecat');
+        trigger_error($this->errorlogtag . 'Category ' . $id . ' was resorted alphabetically.', E_USER_NOTICE);
         return true;
     }
 

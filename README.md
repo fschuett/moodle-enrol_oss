@@ -48,6 +48,12 @@ executed once an hour.
 
 Changelog
 ---------
+2013-10-08
+fix some errors
+clean up database from old lml assignments / enrolments
+fix display of php notice messages
+fix small php coding error
+
 2013-09-29
 changed quite some code to be conform to moodle 2.5.x
 some fixes for moodle 2.5.x

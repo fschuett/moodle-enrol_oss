@@ -99,34 +99,27 @@ class enrol_openlml_plugin extends enrol_plugin {
     public function sync_user_enrolments($user) {
         global $DB,$CFG;
 
-        trigger_error($this->errorlogtag . 'sync_user_enrolments called', E_USER_NOTICE);
         // Correct the cohort subscriptions.
         $ldap_groups = $this->ldap_get_grouplist($user->idnumber);
-        trigger_error($this->errorlogtag . 'user:' . $user->idnumber . ' ldap_groups:' . $ldap_groups, E_USER_NOTICE);
         $cohorts = $this->get_cohortlist($user->idnumber);
-        trigger_error($this->errorlogtag . 'user:' . $user->idnumber . ' cohorts:' . $cohorts, E_USER_NOTICE);
         foreach ($ldap_groups as $group => $groupname) {
             if (!isset($cohorts[$groupname])) {
                 $cohortid = $this->get_cohort_id($groupname);
                 cohort_add_member($cohortid, $user->id);
-                trigger_error($this->errorlogtag . 'add ' . $user->username . ' to cohort ' . $groupname, E_USER_NOTICE);
             }
         }
 
         foreach ($cohorts as $cohort) {
             if (!in_array($cohort->idnumber, $ldap_groups)) {
                 cohort_remove_member($cohort->id, $user->id);
-                trigger_error($this->errorlogtag . 'remove ' . $user->username . ' from cohort ' . $cohort->name, E_USER_NOTICE);
                 if (!$DB->record_exists('cohort_members', array('cohortid'=>$cohort->id))) {
                     cohort_delete_cohort($cohortid);
-                    trigger_error($this->errorlogtag . 'remove empty cohort ' . $cohort->name, E_USER_NOTICE);
                 }
             }
         }
 
         // Autocreate/autoremove teacher category.
         if ($this->config->teachers_category_autocreate OR $this->config->teachers_category_autoremove) {
-            trigger_error($this->errorlogtag . 'autocreate/autoremove teacher category for teacher ' . $user->username, E_USER_NOTICE);
             if (!isset($this->teacher_obj)) {
                 $this->teacher_obj = $this->get_teacher_category();
             }
@@ -138,34 +131,29 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
 
             $edited = false;
-            trigger_error($this->errorlogtag . 'Testing for autoremove. ', E_USER_NOTICE);
             if ($this->config->teachers_category_autoremove AND
                   (!$this->is_teacher($user->idnumber) OR $this->is_ignored_teacher($user->idnumber))) {
                 if ($cat = $DB->get_record('course_categories', array('name'=>$user->idnumber,
                         'parent'=>$this->teacher_obj->id),'*',IGNORE_MULTIPLE)) {
                     if ($DB->count_records('course_categories', array('name'=>$user->idnumber,
                 	    'parent'=>$this->teacher_obj->id)) > 1) {
-                	trigger_error($this->errorlogtag . ' There are more than one matching category named '.
+                	if (debugging())
+                            trigger_error(' There are more than one matching category named '.
                 		$user->idnumber .' in '.$this->teacher_obj->name .". That is likely to cause problems.",E_USER_WARNING);
             	    }
             	    if (!$this->delete_move_teacher_to_attic($cat)) {
                         debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->name . ' to attic.');
                     }
-                    trigger_error($this->errorlogtag . 'removed category of removed teacher ' . $cat->name, E_USER_NOTICE);
                     $edited = true;
                 }
             }
-            trigger_error($this->errorlogtag . 'Testing for autocreate. ', E_USER_NOTICE);
             if ($this->config->teachers_category_autocreate AND
                 $this->is_teacher($user->idnumber) AND !$this->is_ignored_teacher($user->idnumber)) {
-                trigger_error($this->errorlogtag . 'The teacher ' . $user->username . ' needs a course category.', E_USER_NOTICE);
                 if (!$DB->get_record('course_categories', array('name'=>$user->idnumber,
                         'parent'=> $this->teacher_obj->id),'*',IGNORE_MULTIPLE)) {
-                    trigger_error($this->errorlogtag . 'The teacher ' . $user->username . ' has no course category.', E_USER_NOTICE);
                     if (!$this->teacher_add_category($user)) {
                         debugging($this->errorlogtag . 'autocreate teacher category failed: ' . $user->username);
                     } else {
-                        trigger_error($this->errorlogtag . 'autocreate course category for '. $user->username, E_USER_NOTICE);
                         $edited = true;
                     }
                 } else if ($DB->count_records('course_categories', array('name'=>$user->idnumber,
@@ -174,13 +162,11 @@ class enrol_openlml_plugin extends enrol_plugin {
         		    $user->idnumber .' in '.$this->teacher_obj->name .". That is likely to cause problems.");
             	}
             }
-            trigger_error($this->errorlogtag . 'Resorting is ' .($edited? '':'not ') . 'necessary.', E_USER_NOTICE);
             if ($edited) {
                 $this->resort_categories($this->teacher_obj->id);
             }
         }
 
-        trigger_error($this->errorlogtag . 'sync_user_enrolments returns', E_USER_NOTICE);
         return true;
     }
 
@@ -195,28 +181,22 @@ class enrol_openlml_plugin extends enrol_plugin {
         global $CFG, $DB;
         require_once($CFG->libdir . '/coursecatlib.php');
         
-        trigger_error($this->errorlogtag . 'sync_enrolments called', E_USER_NOTICE);
-
         $ldap_groups = $this->ldap_get_grouplist();
 
         foreach ($ldap_groups as $group => $groupname) {
-            trigger_error($this->errorlogtag . '  sync group:' . $groupname, E_USER_NOTICE);
             $cohortid = $this->get_cohort_id($groupname);
-            trigger_error($this->errorlogtag . $cohortid, E_USER_NOTICE);
             $ldap_members = $this->ldap_get_group_members($groupname, $this->has_teachers_as_members($groupname));
             $cohort_members = $this->get_cohort_members($cohortid);
 
             foreach ($cohort_members as $userid => $user) {
                 if (!isset ($ldap_members[$userid])) {
                     cohort_remove_member($cohortid, $userid);
-                    trigger_error($this->errorlogtag . 'remove ' . $user->username . ' from cohort ' . $groupname, E_USER_NOTICE);
                 }
             }
 
             foreach ($ldap_members as $userid => $username) {
                 if (!$this->cohort_is_member($cohortid, $userid)) {
                     cohort_add_member($cohortid, $userid);
-                    trigger_error($this->errorlogtag . 'add ' . $username . ' to cohorte ' . $groupname, E_USER_NOTICE);
                 }
             }
         }
@@ -224,20 +204,17 @@ class enrol_openlml_plugin extends enrol_plugin {
         // Remove unneeded cohorts.
         $toremove = array();
         $cohorts = $this->get_cohortlist();
-        trigger_error($this->errorlogtag . 'cohorts list:' . $cohorts, E_USER_NOTICE);
         foreach ($cohorts as $cohort) {
             if (!in_array($cohort->idnumber, $ldap_groups)) {
                 $toremove[] = $cohort->id;
             }
         }
-        trigger_error($this->errorlogtag . 'remove cohorts list:' . $toremove, E_USER_NOTICE);
         if (!empty($toremove)) {
             $DB->delete_records_list('cohort_members', 'cohortid', $toremove);
             $DB->delete_records_list('cohort', 'id', $toremove);
         }
 
         if ($this->config->teachers_category_autocreate OR $this->config->teachers_category_autoremove) {
-            trigger_error($this->errorlogtag . '== syncing teacher categories', E_USER_NOTICE);
             if (!isset($this->teacher_obj)) {
                 $this->teacher_obj = $this->get_teacher_category();
             }
@@ -263,7 +240,6 @@ class enrol_openlml_plugin extends enrol_plugin {
                         if (!$this->delete_move_teacher_to_attic($cat)) {
                             debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->name . ' to attic.');
                         }
-                        trigger_error($this->errorlogtag . 'removed category of removed teacher ' . $cat->name, E_USER_NOTICE);
                         $edited = true;
                     }
                 }
@@ -274,7 +250,6 @@ class enrol_openlml_plugin extends enrol_plugin {
         if ($this->config->teachers_category_autocreate) {
             foreach ($this->teacher_array as $teacher) {
                 if (empty($teacher) OR $this->is_ignored_teacher($teacher)) {
-                    trigger_error($this->errorlogtag . 'teacher ' . $teacher . ' will be ignored.', E_USER_NOTICE);
                     continue;
                 }
                 $user = $DB->get_record('user', array('username'=>$teacher, 'auth' => 'ldap'));
@@ -287,7 +262,6 @@ class enrol_openlml_plugin extends enrol_plugin {
                         debugging($this->errorlogtag . 'autocreate teacher category failed: ' . $teacher);
                         continue;
                     }
-                    trigger_error($this->errorlogtag . 'autocreate course category for '. $teacher, E_USER_NOTICE);
                     $edited = true;
                 } else if ($DB->count_records('course_categories',
                         array('name'=>$teacher, 'parent' => $this->teacher_obj->id)) > 1) {
@@ -318,25 +292,19 @@ class enrol_openlml_plugin extends enrol_plugin {
     public function update_city(&$user = NULL) {
         global $DB,$CFG;
 
-        trigger_error($this->errorlogtag . 'update_city(' . $user . ') called.', E_USER_NOTICE);
-
         if (empty($user)) {
             $params = array('auth' => 'ldap', 'city' => '');
             if (!$DB->set_field('user', 'city', $CFG->defaultcity, $params)) {
                 debugging($this->errorlogtag . "update of city field for many users failed.");
             }
-            trigger_error($this->errorlogtag . ' updated city field with ' . $CFG->defaultcity .
-                        " for many users.", E_USER_NOTICE);
         } else {
             if ($user->city == '') {
                 if (!$DB->set_field('user', 'city', $CFG->defaultcity, array('id' => $user->id))) {
                     debugging($this->errorlogtag . 'update of city field for user ' . $user->username .
                             " failed.");
                 }
-                trigger_error($this->errorlogtag . 'updated city field for user ' . $user->username, E_USER_NOTICE);
             }
         }
-        trigger_error($this->errorlogtag . 'update_city(' . $user . ') returns.', E_USER_NOTICE);
     }
 
     /**
@@ -351,12 +319,9 @@ class enrol_openlml_plugin extends enrol_plugin {
         require_once($CFG->dirroot . '/enrol/cohort/locallib.php');
         $edited = false;
 
-        trigger_error($this->errorlogtag . 'sync_cohort_enrolments called', E_USER_NOTICE);
         $enrol = enrol_get_plugin('cohort');
         $courses = $DB->get_recordset_select('course', "idnumber != ''");
         foreach ($courses as $course) {
-            trigger_error($this->errorlogtag . 'course shortname(' . $course->shortname .
-                        ') idnumber('. $course->idnumber . ")", E_USER_NOTICE);
             if ((strpos($course->idnumber, $course->shortname . ':')) === 0) {
                 $groups = explode(',', substr($course->idnumber, strlen($course->shortname . ':')));
             }
@@ -370,11 +335,8 @@ class enrol_openlml_plugin extends enrol_plugin {
                         $course->shortname . ':' . $course->idnumber, array('id'=>$course->id));
                 $groups = explode(',', $course->idnumber);
             }
-            trigger_error($this->errorlogtag . 'groups ' . $group, E_USER_NOTICE);
             $cohorts = $this->get_cohortinstancelist($course->id);
-            trigger_error($this->errorlogtag . 'enrol plugin instances ' . $cohorts, E_USER_NOTICE);
             foreach ($groups as $group) {
-                trigger_error($this->errorlogtag . ' is group ' . $group . ' enroled?', E_USER_NOTICE);
                 if (!isset($cohorts[$group]) AND $cohortid=$this->get_cohort_id($group, false)) {
                     if ($this->has_teachers_as_members($group)) {
                         $enrol->add_instance($course,
@@ -383,19 +345,15 @@ class enrol_openlml_plugin extends enrol_plugin {
                         $enrol->add_instance($course,
                                 array('customint1' => $cohortid, 'roleid' => $this->config->student_role));
                     }
-                    trigger_error($this->errorlogtag . 'add cohort ' . $group . ' to course ' . $course->name, E_USER_NOTICE);
                     $edited = true;
                 }
             }
 
             foreach ($cohorts as $cohort) {
-                trigger_error($this->errorlogtag . ' is cohort ' . $cohort->idnumber . ' still necessary?', E_USER_NOTICE);
                 if (!in_array($cohort->idnumber, $groups)) {
                     $instances = enrol_get_instances($course->id, false);
-                    trigger_error($this->errorlogtag . 'enrolment instances ' . $instances, E_USER_NOTICE);
                     foreach ($instances as $instance) {
                         if ($instance->enrol == 'cohort' AND $instance->customint1 == $cohort->id) {
-                            trigger_error($this->errorlogtag . 'remove cohort ' . $cohort->idnumber . ' from course ' . $course->shortname, E_USER_NOTICE);
                             $plugin = enrol_get_plugin($instance->enrol);
                             $plugin->delete_instance($instance);
                             break;
@@ -408,7 +366,6 @@ class enrol_openlml_plugin extends enrol_plugin {
         $courses->close();
         if ($edited) {
             $trace = new null_progress_trace();
-	    trigger_error($this->errorlogtag . 'call to enrol_cohort_sync...', E_USER_NOTICE);
             enrol_cohort_sync($trace);
         }
     }
@@ -451,10 +408,8 @@ class enrol_openlml_plugin extends enrol_plugin {
      */
     private function ldap_get_grouplist($userid = "*") {
         global $CFG, $DB;
-        trigger_error($this->errorlogtag . 'ldap_get_grouplist called', E_USER_NOTICE);
         if (!isset($authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
-            trigger_error($this->errorlogtag . "auth plugin loaded", E_USER_NOTICE);
         }
         $ldapconnection = $authldap->ldap_connect();
 
@@ -465,10 +420,7 @@ class enrol_openlml_plugin extends enrol_plugin {
             $filter = '';
         }
         $filter = '(&' . $this->ldap_generate_group_pattern() . $filter . '(objectclass=' . $this->config->object . '))';
-        trigger_error($this->errorlogtag . 'filter defined:' . $filter, E_USER_NOTICE);
         $contexts = explode(';', $this->config->contexts);
-        trigger_error($this->errorlogtag . 'contexts settings(' . $this->config->contexts .
-                    ') contexts array(' . $contexts . ')', E_USER_NOTICE);
         foreach ($contexts as $context) {
             $context = trim($context);
             if (empty ($context)) {
@@ -503,7 +455,6 @@ class enrol_openlml_plugin extends enrol_plugin {
                 }
             }
         }
-        trigger_error($this->errorlogtag . 'found ldap groups:' . implode(', ', $fresult), E_USER_NOTICE);
         return $fresult;
     }
 
@@ -514,23 +465,19 @@ class enrol_openlml_plugin extends enrol_plugin {
     private function ldap_get_group_members($group, $teachers_ok = false) {
         global $CFG, $DB;
 
-        trigger_error($this->errorlogtag . 'ldap_get_group_members called', E_USER_NOTICE);
         $ret = array ();
         $members = array ();
         if (!isset($authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
-            trigger_error($this->errorlogtag . "auth plugin loaded", E_USER_NOTICE);
         }
         $ldapconnection = $authldap->ldap_connect();
 
         $group = textlib::convert($group, 'utf-8', $this->config->ldapencoding);
 
-        trigger_error($this->errorlogtag . 'ldap connection:' . $ldapconnection, E_USER_NOTICE);
         if (!$ldapconnection) {
             return $ret;
         }
         $queryg = "(&(cn=" . trim($group) . ")(objectClass=" . $this->config->object . "))";
-        trigger_error($this->errorlogtag . "query: " . $queryg, E_USER_NOTICE);
         $contexts = explode(';', $this->config->contexts);
 
         foreach ($contexts as $context) {
@@ -552,7 +499,6 @@ class enrol_openlml_plugin extends enrol_plugin {
                 }
             }
         }
-        trigger_error($this->errorlogtag . "ldap_get_group_members returns " . $members, E_USER_NOTICE);
         $authldap->ldap_close();
         foreach ($members as $member) {
             $params = array (
@@ -581,7 +527,6 @@ class enrol_openlml_plugin extends enrol_plugin {
             $cohort->component='enrol_openlml';
             $cohort->description=get_string('sync_description', 'enrol_openlml');
             $cohortid = cohort_add_cohort($cohort);
-            trigger_error($this->errorlogtag . 'cohort added:' . $cohort->name, E_USER_NOTICE);
         } else {
             $cohortid = $cohort->id;
         }
@@ -604,7 +549,6 @@ class enrol_openlml_plugin extends enrol_plugin {
                             WHERE c.component = 'enrol_openlml'";
             $records = $DB->get_records_sql($sql);
         }
-        trigger_error($this->errorlogtag . 'records for cohortlist:' . $records, E_USER_NOTICE);
         $ret = array();
         foreach ($records as $record) {
             $ret[$record->idnumber] = $record;
@@ -669,7 +613,6 @@ class enrol_openlml_plugin extends enrol_plugin {
         // Create the search pattern to search all classes and courses in LDAP.
         global $CFG;
 
-        trigger_error($this->errorlogtag . ' generate_class_pattern called', E_USER_NOTICE);
         $pattern[] = '(' . $this->config->attribute . '=' . $this->config->teachers_group_name .')';
         if (!empty($this->config->prefix_teacher_members)) {
             $classes = explode(',', $this->config->prefix_teacher_members);
@@ -688,9 +631,7 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
         }
         $pattern[] = '(' . $this->config->attribute . '='. $this->config->student_project_prefix . '*)';
-        trigger_error($this->errorlogtag . 'generated_class_pattern:' . $pattern, E_USER_NOTICE);
         $pattern = '(|' . implode($pattern) . ')';
-        trigger_error($this->errorlogtag . 'generated_class_pattern:' . $pattern, E_USER_NOTICE);
         return $pattern;
     }
 
@@ -730,8 +671,6 @@ class enrol_openlml_plugin extends enrol_plugin {
         // Create teacher category if needed.
         $cat_obj = $DB->get_record( 'course_categories', array('name'=>$this->config->teachers_course_context, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$cat_obj) { // Category doesn't exist.
-            trigger_error($this->errorlogtag . 'creating non-existing teachers course category ' .
-                        $this->config->teachers_course_context, E_USER_NOTICE);
             $cat_obj = $this->create_category($this->config->teachers_course_context,
                     get_string('teacher_context_desc', 'enrol_openlml'));
             if (!$cat_obj) {
@@ -801,12 +740,9 @@ class enrol_openlml_plugin extends enrol_plugin {
         
         if ($deletable) {
             $teachercat->delete_full(true);
-            trigger_error($this->errorlogtag . 'deleting teacher category '.$teacher->id.'.', E_USER_NOTICE);
         }
         else {
             $teachercat->change_parent($this->attic_obj);
-            trigger_error($this->errorlogtag . 'moving teacher category '.$teacher->id.' to attic.',
-                            E_USER_NOTICE);
         }
         
         return true;
@@ -837,15 +773,12 @@ class enrol_openlml_plugin extends enrol_plugin {
                 if ($cat->sortorder != $count) {
                     $DB->set_field('course_categories', 'sortorder', $count, array('id' => $cat->id));
                     context_coursecat::instance($cat->id)->mark_dirty();
-                    trigger_error($this->errorlogtag . 'category('.$cat->name.') got new sortorder('.$count.').',         
-                                    E_USER_NOTICE);
                     $count++;
                 }
             }
         }
         context_coursecat::instance($teacher_cat->id)->mark_dirty();
         cache_helper::purge_by_event('changesincoursecat');
-        trigger_error($this->errorlogtag . 'Category ' . $id . ' was resorted alphabetically.', E_USER_NOTICE);
         return true;
     }
 
@@ -855,7 +788,7 @@ class enrol_openlml_plugin extends enrol_plugin {
      * @uses $CFG
      *
      */
-    private function is_ignored_teacher(&$name) {
+    private function is_ignored_teacher($name) {
         global $CFG;
         $ignored_teachers = explode(',', $this->config->teachers_ignore);
         if (empty($ignored_teachers)) {
@@ -873,7 +806,6 @@ class enrol_openlml_plugin extends enrol_plugin {
         global $CFG, $DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
-        trigger_error($this->errorlogtag . 'Adding teacher category for teacher ' . $user->username, E_USER_NOTICE);
         if (!isset($this->attic_obj)) {
             $this->attic_obj = $this->get_teacher_attic_category();
         }
@@ -891,7 +823,6 @@ class enrol_openlml_plugin extends enrol_plugin {
         } else {
             $description = get_string('course_description', 'enrol_openlml') . ' ' .
                     $user->firstname . ' ' .$user->lastname . '(' . $user->idnumber. ').';
-            trigger_error($this->errorlogtag . 'Calling create_category for ' . $user->username . ' with description ' . $description, E_USER_NOTICE);
             $cat_obj = $this->create_category($user->username, $description, $this->teacher_obj->id);
             if (!$cat_obj) {
                 debugging('Could not create teacher category for teacher ' . $user->username);
@@ -922,7 +853,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         global $CFG,$DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
-        trigger_error("Creating category $name ($description) with parent $parent and sortorder $sortorder",E_USER_NOTICE);
+        //trigger_error("Creating category $name ($description) with parent $parent and sortorder $sortorder",E_USER_NOTICE);
         $data = new stdClass();
         $data->name = $data->idnumber = $name;
         $data->description = $description;
@@ -934,7 +865,7 @@ class enrol_openlml_plugin extends enrol_plugin {
             return false;
         }
         if ($sortorder != 0) {
-            trigger_error('Changing course sortorder to ' . $sortorder,E_USER_NOTICE);
+            //trigger_error('Changing course sortorder to ' . $sortorder,E_USER_NOTICE);
             $DB->set_field('course_categories', 'sortorder', $sortorder, array('id' => $cat->id));
             context_coursecat::instance($cat->id)->mark_dirty();
             fix_course_sortorder();

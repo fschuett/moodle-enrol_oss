@@ -61,5 +61,26 @@ function xmldb_enrol_openlml_upgrade($oldversion) {
 
         upgrade_plugin_savepoint(true, 2013100500, 'enrol', 'openlml');
     }
+
+    if ($oldversion < 2013100800) {
+        // change faulty coursecreator roles
+        echo "move old coursecreator assignments from lml to enrol_openlml\n";
+        $role = $DB->get_record('role', array('shortname'=>'coursecreator'));
+        if ($role) {
+            if($records = $DB->get_recordset_select('role_assignments', "(roleid='" . $role->id . "' and component='enrol_lml')")) {
+                foreach ($records as $record) {
+                    $record->component = 'enrol_openlml';
+                }
+                $records->close();
+            }
+        }
+
+        // remove faulty 'lml' enrolments and assignments
+        $DB->delete_records('enrol', array('enrol'=>'lml'));
+        $DB->delete_records('role_assignments', array('component'=>'enrol_lml'));
+        $DB->delete_records('role_assignments', array('component'=>'auth_lml'));
+
+        upgrade_plugin_savepoint(true, 2013100800, 'enrol', 'openlml');
+    }
     return true;
 }

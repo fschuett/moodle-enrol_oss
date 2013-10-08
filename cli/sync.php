@@ -74,7 +74,7 @@ Sample cron entry:
 }
 
 // Ensure errors are well explained.
-$CFG->debug = DEBUG_NORMAL;
+//$CFG->debug = DEBUG_NORMAL;
 
 // The enrolment depends on user synchronization via auth_ldap.
 if (!is_enabled_auth('ldap')) {

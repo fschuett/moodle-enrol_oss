@@ -48,6 +48,9 @@ executed once an hour.
 
 Changelog
 ---------
+2013-10-10
+check teachers role independent of category existence
+
 2013-10-08
 fix some errors
 clean up database from old lml assignments / enrolments

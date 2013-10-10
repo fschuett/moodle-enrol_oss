@@ -149,9 +149,11 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
             if ($this->config->teachers_category_autocreate AND
                 $this->is_teacher($user->idnumber) AND !$this->is_ignored_teacher($user->idnumber)) {
-                if (!$DB->get_record('course_categories', array('name'=>$user->idnumber,
-                        'parent'=> $this->teacher_obj->id),'*',IGNORE_MULTIPLE)) {
-                    if (!$this->teacher_add_category($user)) {
+                $cat = $DB->get_record('course_categories', array('name'=>$user->idnumber,
+                        'parent'=> $this->teacher_obj->id),'*',IGNORE_MULTIPLE);
+                if (!$cat) {
+                    $cat = $this->teacher_add_category($user);
+                    if (!$cat) {
                         debugging($this->errorlogtag . 'autocreate teacher category failed: ' . $user->username);
                     } else {
                         $edited = true;
@@ -161,6 +163,9 @@ class enrol_openlml_plugin extends enrol_plugin {
             	    debugging($this->errorlogtag . ' WARNING: there are more than one matching category named '.
         		    $user->idnumber .' in '.$this->teacher_obj->name .". That is likely to cause problems.");
             	}
+                if ($cat AND !$this->teacher_has_role($user,$cat)) {
+                    $this->teacher_assign_role($user,$cat);
+                }
             }
             if ($edited) {
                 $this->resort_categories($this->teacher_obj->id);
@@ -258,7 +263,8 @@ class enrol_openlml_plugin extends enrol_plugin {
 
                 // Autocreate/move teacher category.
                 if (empty($cat_obj)) {
-                    if (!$this->teacher_add_category($user)) {
+                    $cat_obj = $this->teacher_add_category($user);
+                    if (!$cat_obj) {
                         debugging($this->errorlogtag . 'autocreate teacher category failed: ' . $teacher);
                         continue;
                     }
@@ -268,6 +274,9 @@ class enrol_openlml_plugin extends enrol_plugin {
             	    debugging($this->errorlogtag . ' WARNING: there are more than one matching category named '.
         		    $teacher .' in '.$this->teacher_obj->name .". That is likely to cause problems.");
 
+                }
+                if (!$this->teacher_has_role($user,$cat_obj)) {
+                    $this->teacher_assign_role($user,$cat_obj);
                 }
             }
         }
@@ -367,6 +376,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         if ($edited) {
             $trace = new null_progress_trace();
             enrol_cohort_sync($trace);
+            $trace->close();
         }
     }
 
@@ -815,7 +825,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         $cat_obj = $DB->get_record('course_categories', array('name'=>$user->idnumber, 'parent' => $this->attic_obj->id),
                 '*',IGNORE_MULTIPLE);
         if ($cat_obj) {
-            if (!$cat_obj->delete_move($this->teacher_obj)) {
+            if (!$cat_obj->change_parent($this->teacher_obj)) {
                 debugging($this->errorlogtag . 'could not move teacher category ' . $cat_obj->name . ' for user ' .
                         $user->idnumber . ' back from attic.');
                 return false;
@@ -829,14 +839,80 @@ class enrol_openlml_plugin extends enrol_plugin {
                 return false;
             }
         }
+        return $cat_obj;
+    }
 
-        // Set teachers role to course creator.
-        $teacherscontext = context_coursecat::instance($cat_obj->id);
+    /**
+     * This function tests if the teachers_course_role for the teacher $user is given to category $cat.
+     * @param $user teacher
+     * @param $cat category
+     * @return false|true
+     * @uses $CFG;
+     */
+    private function teacher_has_role($user, $cat) {
+        global $CFG,$DB;
+        require_once($CFG->libdir . '/coursecatlib.php');
+
+        if (empty($user)){
+            throw new coding_exception('Invalid call to teacher_has_role(), user cannot be empty.');
+        }
+        if (empty($cat)) {
+           throw new coding_exception('Invalid call to teacher_has_role(), cat cannot be empty.');
+        }
+
+        // Tests for teachers role.
+        return $DB->record_exists('role_assignments', array('roleid'=>$this->config->teachers_course_role,
+                        'contextid'=>$cat->id, 'userid'=>$user->id, 'component'=>'enrol_openlml'));
+    }
+
+    /**
+     * This function adds the teachers_course_role for the teacher $user to the given category $cat.
+     * @param $user teacher for whom the coursecreator role will be added
+     * @param $cat category for whom to add the teacher as role teachers_course_role
+     * @return false|true
+     * @uses $CFG;
+     */
+    private function teacher_assign_role($user, $cat) {
+        global $CFG;
+        require_once($CFG->libdir . '/coursecatlib.php');
+        if (empty($user)){
+            throw new coding_exception('Invalid call to teacher_assign_role(), user cannot be empty.');
+        }
+        if (empty($cat)) {
+           throw new coding_exception('Invalid call to teacher_assign_role(), cat cannot be empty.');
+        }
+
+        // Set teachers role to configured teachers course role.
+        $teacherscontext = context_coursecat::instance($cat->id);
         if (!role_assign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_openlml')) {
             debugging($this->errorlogtag . 'could not assign role (' . $this->config->teachers_course_role . ') to user (' .
                     $user->idnumber . ') in context (' . $teacherscontext->id . ').');
             return false;
         }
+        return true;
+    }
+
+    /**
+     * This function removes the teachers_course_role for the teacher $user from the given category $cat.
+     * @param $user teacher for whom the coursecreator role will be removed
+     * @param $cat category for whom to remove the teacher as role teachers_course_role
+     * @return false|true
+     * @uses $CFG;
+     */
+    private function teacher_unassign_role($user, $cat) {
+        global $CFG;
+        require_once($CFG->libdir . '/coursecatlib.php');
+
+        if (empty($user)){
+            throw new coding_exception('Invalid call to teacher_unassign_role(), user cannot be empty.');
+        }
+        if (empty($cat)) {
+           throw new coding_exception('Invalid call to teacher_unassign_role(), cat cannot be empty.');
+        }
+
+        // Removes teachers configured course role.
+        $teacherscontext = context_coursecat::instance($cat->id);
+        role_unassign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_openlml');
         return true;
     }
 

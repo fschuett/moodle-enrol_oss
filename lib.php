@@ -861,8 +861,9 @@ class enrol_openlml_plugin extends enrol_plugin {
         }
 
         // Tests for teachers role.
+        $teacherscontext = context_coursecat::instance($cat->id);
         return $DB->record_exists('role_assignments', array('roleid'=>$this->config->teachers_course_role,
-                        'contextid'=>$cat->id, 'userid'=>$user->id, 'component'=>'enrol_openlml'));
+                        'contextid'=>$teacherscontext->id, 'userid'=>$user->id, 'component'=>'enrol_openlml'));
     }
 
     /**

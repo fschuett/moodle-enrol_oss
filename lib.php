@@ -349,10 +349,12 @@ class enrol_openlml_plugin extends enrol_plugin {
                 if (!isset($cohorts[$group]) AND $cohortid=$this->get_cohort_id($group, false)) {
                     if ($this->has_teachers_as_members($group)) {
                         $enrol->add_instance($course,
-                                array('customint1' => $cohortid, 'roleid' => $this->config->teachers_role));
+                                array('customint1' => $cohortid, 'customchar1' => $this->enroltype,
+                                        'roleid' => $this->config->teachers_role));
                     } else {
                         $enrol->add_instance($course,
-                                array('customint1' => $cohortid, 'roleid' => $this->config->student_role));
+                                array('customint1' => $cohortid, 'customchar1' => $this->enroltype,
+                                        'roleid' => $this->config->student_role));
                     }
                     $edited = true;
                 }
@@ -362,7 +364,8 @@ class enrol_openlml_plugin extends enrol_plugin {
                 if (!in_array($cohort->idnumber, $groups)) {
                     $instances = enrol_get_instances($course->id, false);
                     foreach ($instances as $instance) {
-                        if ($instance->enrol == 'cohort' AND $instance->customint1 == $cohort->id) {
+                        if ($instance->enrol == 'cohort' AND $instance->customint1 == $cohort->id
+                                AND $instance->customchar1 == $this->enroltype) {
                             $plugin = enrol_get_plugin($instance->enrol);
                             $plugin->delete_instance($instance);
                             break;
@@ -571,9 +574,11 @@ class enrol_openlml_plugin extends enrol_plugin {
         $cohorts = enrol_get_instances($courseid, true);
         $ret = array();
         foreach (array_keys($cohorts) as $key) {
-            if ($cohorts[$key]->enrol != 'cohort' OR !isset($cohorts[$key]->customint1)) {
+            if ($cohorts[$key]->enrol != 'cohort' OR !isset($cohorts[$key]->customint1)
+                    OR !isset($cohorts[$key]->customchar1) OR $cohors[$key]-customchar1 != $this->enroltype) {
                 unset($cohorts[$key]);
-            } else if ($record = $DB->get_record('cohort', array('id' => $cohorts[$key]->customint1))) {
+            } else if ($record = $DB->get_record('cohort', 
+                    array('id' => $cohorts[$key]->customint1))) {
                 $ret[$record->idnumber] = $record;
             }
         }

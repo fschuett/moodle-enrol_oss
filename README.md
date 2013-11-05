@@ -48,6 +48,9 @@ executed once an hour.
 
 Changelog
 ---------
+2013-11-19
+make openlml instances independent from cohort instances
+
 2013-10-10
 check teachers role independent of category existence
 

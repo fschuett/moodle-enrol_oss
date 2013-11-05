@@ -82,5 +82,12 @@ function xmldb_enrol_openlml_upgrade($oldversion) {
 
         upgrade_plugin_savepoint(true, 2013100800, 'enrol', 'openlml');
     }
+    
+    if ($oldversion < 2013110500) {
+	// add identifying enrol_openlml to customchar1
+	$DB->execute("UPDATE {enrol} SET customchar1 = 'enrol_openlml' WHERE enrol = 'cohort'");
+	upgrade_plugin_savepoint(true, 2013110500, 'enrol', 'openlml');
+    }
+    
     return true;
 }

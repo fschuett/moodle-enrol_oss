@@ -1,2 +1,3 @@
 - sync users cohort enrolments when logging in
 - less and more informative messages
++ make enrol instances independent from cohort instances

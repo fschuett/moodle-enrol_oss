@@ -575,7 +575,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         $ret = array();
         foreach (array_keys($cohorts) as $key) {
             if ($cohorts[$key]->enrol != 'cohort' OR !isset($cohorts[$key]->customint1)
-                    OR !isset($cohorts[$key]->customchar1) OR $cohors[$key]->customchar1 != $this->enroltype) {
+                    OR !isset($cohorts[$key]->customchar1) OR $cohorts[$key]->customchar1 != $this->enroltype) {
                 unset($cohorts[$key]);
             } else if ($record = $DB->get_record('cohort', 
                     array('id' => $cohorts[$key]->customint1))) {

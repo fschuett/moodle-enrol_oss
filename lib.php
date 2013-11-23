@@ -379,7 +379,6 @@ class enrol_openlml_plugin extends enrol_plugin {
         if ($edited) {
             $trace = new null_progress_trace();
             enrol_cohort_sync($trace);
-            $trace->close();
         }
     }
 

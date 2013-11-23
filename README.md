@@ -48,6 +48,9 @@ executed once an hour.
 
 Changelog
 ---------
+2013-11-32
+corrected some typos, removed null_progress_trace.close
+
 2013-11-19
 make openlml instances independent from cohort instances
 

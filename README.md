@@ -48,7 +48,10 @@ executed once an hour.
 
 Changelog
 ---------
-2013-11-32
+2013-11-27
+fix: cohort enrolments are now removed correctly
+
+2013-11-23
 corrected some typos, removed null_progress_trace.close
 
 2013-11-19

@@ -329,23 +329,12 @@ class enrol_openlml_plugin extends enrol_plugin {
         $edited = false;
 
         $enrol = enrol_get_plugin('cohort');
+        //add cohorts for idcohorts
         $courses = $DB->get_recordset_select('course', "idnumber != ''");
         foreach ($courses as $course) {
-            if ((strpos($course->idnumber, $course->shortname . ':')) === 0) {
-                $groups = explode(',', substr($course->idnumber, strlen($course->shortname . ':')));
-            }
-            else if (($pos=strpos($course->idnumber, ':')) !== false) {
-                $groups = explode(',', substr($course->idnumber, $pos+1));
-                $DB->set_field('course', 'idnumber',
-                        $course->shortname . ':' . implode($groups), array('id'=>$course->id));
-            }
-            else {
-                $DB->set_field('course', 'idnumber',
-                        $course->shortname . ':' . $course->idnumber, array('id'=>$course->id));
-                $groups = explode(',', $course->idnumber);
-            }
-            $cohorts = $this->get_cohortinstancelist($course->id);
-            foreach ($groups as $group) {
+            $idcohort[$course->id] = $this->get_idnumber_cohorts($course->id,$course->idnumber,$course->shortname);
+            $cohorts = $this->get_coursecohortlist($course->id);
+            foreach ($idcohort[$course->id] as $group) {
                 if (!isset($cohorts[$group]) AND $cohortid=$this->get_cohort_id($group, false)) {
                     if ($this->has_teachers_as_members($group)) {
                         $enrol->add_instance($course,
@@ -359,23 +348,26 @@ class enrol_openlml_plugin extends enrol_plugin {
                     $edited = true;
                 }
             }
+        }
+        $courses->close();
 
-            foreach ($cohorts as $cohort) {
-                if (!in_array($cohort->idnumber, $groups)) {
-                    $instances = enrol_get_instances($course->id, false);
-                    foreach ($instances as $instance) {
-                        if ($instance->enrol == 'cohort' AND $instance->customint1 == $cohort->id
-                                AND $instance->customchar1 == $this->enroltype) {
-                            $plugin = enrol_get_plugin($instance->enrol);
-                            $plugin->delete_instance($instance);
-                            break;
-                        }
-                    }
+        //remove cohorts not in idcohorts
+        $coursecohorts = $this->get_cohortinstancelist();
+        foreach ($coursecohorts as $courseid => $instances) {
+            if (!isset($idcohort[$courseid])) {
+                foreach ($instances as $cohort => $instance) {
+                    $enrol->delete_instance($instance);
                     $edited = true;
+                }
+            } else {
+                foreach ($instances as $cohort => $instance) {
+                    if (!in_array($cohort, $idcohort[$courseid])) {
+                        $enrol->delete_instance($instance);
+                        $edited = true;
+                    }
                 }
             }
         }
-        $courses->close();
         if ($edited) {
             $trace = new null_progress_trace();
             enrol_cohort_sync($trace);
@@ -412,6 +404,36 @@ class enrol_openlml_plugin extends enrol_plugin {
         mtrace("Starting enrolments for openlml enrolments plugin...");
         $this->enrol_openlml_sync();
         mtrace("finished.");
+    }
+
+    /**
+     * return an array of groups, which are defined in course idnumber
+     * @parameters $courseid : $course->id, $idnumber : $course->idnumber
+     *             $shortname : $course->shortname
+     * @return array()
+     */
+
+    private function get_idnumber_cohorts($courseid, $idnumber, $shortname) {
+        $groups = array();
+        if (!isset($idnumber) or empty($idnumber)
+                or !isset($shortname) or empty($shortname)
+                or !isset($courseid) or empty($courseid)) {
+            return $groups;
+        }
+        if ((strpos($idnumber, $shortname . ':')) === 0) {
+            $groups = explode(',', substr($idnumber, strlen($shortname . ':')));
+        }
+        else if (($pos=strpos($idnumber, ':')) !== false) {
+            $groups = explode(',', substr($idnumber, $pos+1));
+            $DB->set_field('course', 'idnumber',
+                    $shortname . ':' . implode($groups), array('id'=>$courseid));
+        }
+        else {
+            $DB->set_field('course', 'idnumber',
+                    $shortname . ':' . $idnumber, array('id'=>$courseid));
+            $groups = explode(',', $idnumber);
+        }
+        return $groups;
     }
 
     /**
@@ -568,10 +590,47 @@ class enrol_openlml_plugin extends enrol_plugin {
         return $ret;
     }
 
-    private function get_cohortinstancelist($courseid) {
+    /**
+     * return a two dimensional array with $courseid as first and
+     * $cohortname as second index
+     * content are cohort enrol instances created by enrol_openlml
+     * @return array of array
+     */
+    private function get_cohortinstancelist() {
         global $DB;
-        $cohorts = enrol_get_instances($courseid, true);
         $ret = array();
+        // fill $cohortname: id => idnumber
+        $sql = " SELECT DISTINCT c.id,c.idnumber
+                FROM {cohort} c";
+        $records = $DB->get_records_sql($sql);
+        $cohortname = array();
+        foreach($records as $record) {
+            $cohortname[$record->id] = $record->idnumber;
+        }
+        // get cohort enrol instances created from enrol_openlml
+        $sql = " SELECT e.id,e.enrol,e.courseid,e.customint1,e.customchar1
+                FROM {enrol} e
+                        WHERE e.enrol='cohort' AND e.customchar1='".$this->enroltype."'";
+        $records = $DB->get_records_sql($sql);
+        // fill array
+        foreach ($records as $record) {
+            if (!isset($ret[$record->courseid])) {
+                $ret[$record->courseid] = array();
+            }
+            $ret[$record->courseid][$cohortname[$record->customint1]] = $record;
+        }
+        return $ret;
+    }
+
+    /**
+     * return an array of cohort instances used in the course with the
+     * given course id and created by enrol_openlml
+     * @return array
+     */
+    private function get_coursecohortlist($courseid) {
+        global $DB;
+        $ret = array();
+        $cohorts = enrol_get_instances($courseid, true);
         foreach (array_keys($cohorts) as $key) {
             if ($cohorts[$key]->enrol != 'cohort' OR !isset($cohorts[$key]->customint1)
                     OR !isset($cohorts[$key]->customchar1) OR $cohorts[$key]->customchar1 != $this->enroltype) {

@@ -414,6 +414,7 @@ class enrol_openlml_plugin extends enrol_plugin {
      */
 
     private function get_idnumber_cohorts($courseid, $idnumber, $shortname) {
+    	global $DB;
         $groups = array();
         if (!isset($idnumber) or empty($idnumber)
                 or !isset($shortname) or empty($shortname)

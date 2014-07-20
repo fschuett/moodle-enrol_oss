@@ -446,9 +446,12 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!isset($authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
         }
-        $ldapconnection = $authldap->ldap_connect();
+        $ldapconnection = $this->ldap_connect_ul($authldap);
 
         $fresult = array ();
+        if (!$ldapconnection) {
+            return $fresult;
+        }
         if ($userid !== "*") {
             $filter = '(' . $this->config->member_attribute . '=' . $userid . ')';
         } else {
@@ -505,7 +508,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!isset($authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
         }
-        $ldapconnection = $authldap->ldap_connect();
+        $ldapconnection = $this->ldap_connect_ul($authldap);
 
         $group = textlib::convert($group, 'utf-8', $this->config->ldapencoding);
 
@@ -1020,6 +1023,37 @@ class enrol_openlml_plugin extends enrol_plugin {
         if ($user) {
             $this->sync_user_enrolments($user);
         }
+    }
+
+    /**
+     * WORKAROUND: auth_ldap->ldap_connect dies
+     * Connect to the LDAP server, using the plugin configured
+     * settings. It's actually a wrapper around ldap_connect_moodle()
+     *
+     * @return resource A valid LDAP connection or false
+     */
+    private function ldap_connect_ul ($authldap) {
+        // Cache ldap connections. They are expensive to set up
+        // and can drain the TCP/IP ressources on the server if we
+        // are syncing a lot of users (as we try to open a new connection
+        // to get the user details). This is the least invasive way
+        // to reuse existing connections without greater code surgery.
+        if(!empty($authldap->ldapconnection)) {
+            $authldap->ldapconns++;
+            return $authldap->ldapconnection;
+        }
+
+        if($ldapconnection = ldap_connect_moodle($authldap->config->host_url, $authldap->config->ldap_version,
+                                                 $authldap->config->user_type, $authldap->config->bind_dn,
+                                                 $authldap->config->bind_pw, $authldap->config->opt_deref,
+                                                 $debuginfo, $authldap->config->start_tls)) {
+            $authldap->ldapconns = 1;
+            $authldap->ldapconnection = $ldapconnection;
+            return $ldapconnection;
+        }
+
+        debugging(get_string('auth_ldap_noconnect_all', 'auth_ldap'));
+        return false;
     }
 
 } // End of class.

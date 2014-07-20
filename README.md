@@ -48,6 +48,9 @@ executed once an hour.
 
 Changelog
 ---------
+2014-07-20
+fix: make auth without ldap connection work
+remove deprecated get_context_instance
 2013-11-27
 fix: cohort enrolments are now removed correctly
 

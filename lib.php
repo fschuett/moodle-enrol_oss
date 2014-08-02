@@ -892,10 +892,9 @@ class enrol_openlml_plugin extends enrol_plugin {
         $cat_obj = $DB->get_record('course_categories', array('name'=>$user->idnumber, 'parent' => $this->attic_obj->id),
                 '*',IGNORE_MULTIPLE);
         if ($cat_obj) {
-            if (!$cat_obj->change_parent($this->teacher_obj)) {
-                debugging($this->errorlogtag . 'could not move teacher category ' . $cat_obj->name . ' for user ' .
-                        $user->idnumber . ' back from attic.');
-                return false;
+            $coursecat = coursecat::get($cat_obj->id);
+            if ($coursecat->can_change_parent($this->teacher_obj->id)) {
+                $coursecat->change_parent($this->teacher_obj->id);
             }
         } else {
             $description = get_string('course_description', 'enrol_openlml') . ' ' .

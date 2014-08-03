@@ -529,10 +529,12 @@ class enrol_openlml_plugin extends enrol_plugin {
             if (!empty ($resultg) AND ldap_count_entries($ldapconnection, $resultg)) {
                 $group = ldap_get_entries($ldapconnection, $resultg);
 
-                for ($g = 0; $g < (count($group[0][$this->config->member_attribute]) - 1); $g++) {
-                    $member = trim($group[0][$this->config->member_attribute][$g]);
-                    if ($member != "" AND ($teachers_ok OR !$this->is_teacher($member))) {
-                        $members[] = $member;
+                if (isset($group[0][$this->config->member_attribute])) {
+                    for ($g = 0; $g < (count($group[0][$this->config->member_attribute]) - 1); $g++) {
+                        $member = trim($group[0][$this->config->member_attribute][$g]);
+                        if ($member != "" AND ($teachers_ok OR !$this->is_teacher($member))) {
+                            $members[] = $member;
+                        }
                     }
                 }
             }

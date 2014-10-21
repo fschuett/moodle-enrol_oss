@@ -50,7 +50,7 @@ list($options, $unrecognized) = cli_get_params(array('help'=>false), array('h'=>
 
 if ($unrecognized) {
     $unrecognized = implode("\n  ", $unrecognized);
-    cli_error(get_string('cliunknowoption', 'admin', $unrecognized));
+    cli_error(get_string('cliunknownoption', 'admin', $unrecognized));
 }
 
 if ($options['help']) {

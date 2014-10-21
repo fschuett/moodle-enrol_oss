@@ -48,6 +48,8 @@ executed once an hour.
 
 Changelog
 ---------
+2014-10-21
+fix: spelling error in sync.php
 2014-07-20
 fix: make auth without ldap connection work
 remove deprecated get_context_instance

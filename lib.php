@@ -139,9 +139,9 @@ class enrol_openlml_plugin extends enrol_plugin {
             $edited = false;
             if ($this->config->teachers_category_autoremove AND
                   (!$this->is_teacher($user->username) OR $this->is_ignored_teacher($user->username))) {
-                if ($cat = $DB->get_record('course_categories', array('name'=>$user->username,
+                if ($cat = $DB->get_record('course_categories', array('idnumber'=>$user->username,
                         'parent'=>$this->teacher_obj->id),'*',IGNORE_MULTIPLE)) {
-                    if ($DB->count_records('course_categories', array('name'=>$user->username,
+                    if ($DB->count_records('course_categories', array('idnumber'=>$user->username,
                 	    'parent'=>$this->teacher_obj->id)) > 1) {
                 	if (debugging())
                             trigger_error(' There are more than one matching category named '.
@@ -155,7 +155,7 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
             if ($this->config->teachers_category_autocreate AND
                 $this->is_teacher($user->username) AND !$this->is_ignored_teacher($user->username)) {
-                $cat = $DB->get_record('course_categories', array('name'=>$user->username,
+                $cat = $DB->get_record('course_categories', array('idnumber'=>$user->username,
                         'parent'=> $this->teacher_obj->id),'*',IGNORE_MULTIPLE);
                 if (!$cat) {
                     $cat = $this->teacher_add_category($user);
@@ -164,7 +164,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                     } else {
                         $edited = true;
                     }
-                } else if ($DB->count_records('course_categories', array('name'=>$user->username,
+                } else if ($DB->count_records('course_categories', array('idnumber'=>$user->username,
             		'parent'=>$this->teacher_obj->id)) > 1) {
             	    debugging($this->errorlogtag . ' WARNING: there are more than one matching category named '.
         		    $user->username .' in '.$this->teacher_obj->name .". That is likely to cause problems.");
@@ -265,7 +265,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                 }
                 $user = $DB->get_record('user', array('username'=>$teacher, 'auth' => 'ldap'));
                 $cat_obj = $DB->get_record('course_categories',
-                        array('name'=>$teacher, 'parent' => $this->teacher_obj->id),'*',IGNORE_MULTIPLE);
+                        array('idnumber'=>$teacher, 'parent' => $this->teacher_obj->id),'*',IGNORE_MULTIPLE);
 
                 // Autocreate/move teacher category.
                 if (empty($cat_obj)) {
@@ -276,7 +276,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                     }
                     $edited = true;
                 } else if ($DB->count_records('course_categories',
-                        array('name'=>$teacher, 'parent' => $this->teacher_obj->id)) > 1) {
+                        array('idnumber'=>$teacher, 'parent' => $this->teacher_obj->id)) > 1) {
             	    debugging($this->errorlogtag . ' WARNING: there are more than one matching category named '.
         		    $teacher .' in '.$this->teacher_obj->name .". That is likely to cause problems.");
 
@@ -755,7 +755,7 @@ class enrol_openlml_plugin extends enrol_plugin {
     private function get_teacher_category() {
         global $CFG, $DB;
         // Create teacher category if needed.
-        $cat_obj = $DB->get_record( 'course_categories', array('name'=>$this->config->teachers_course_context, 'parent' => 0),'*',IGNORE_MULTIPLE);
+        $cat_obj = $DB->get_record( 'course_categories', array('idnumber'=>$this->config->teachers_course_context, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$cat_obj) { // Category doesn't exist.
             $cat_obj = $this->create_category($this->config->teachers_course_context,
                     get_string('teacher_context_desc', 'enrol_openlml'));
@@ -773,7 +773,7 @@ class enrol_openlml_plugin extends enrol_plugin {
      */
     private function get_teacher_attic_category() {
         global $CFG, $DB;
-        $this->attic_obj = $DB->get_record( 'course_categories', array('name'=>$this->config->teachers_removed, 'parent' => 0),'*',IGNORE_MULTIPLE);
+        $this->attic_obj = $DB->get_record( 'course_categories', array('idnumber'=>$this->config->teachers_removed, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$this->attic_obj) { // Category for removed teachers doesn't exist.
             $this->attic_obj = $this->create_category($this->config->teachers_removed,
                     get_string('attic_description', 'enrol_openlml'),0,99999,0);
@@ -898,7 +898,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!isset($this->teacher_obj)) {
             $this->teacher_obj = $this->get_teacher_category();
         }
-        $cat_obj = $DB->get_record('course_categories', array('name'=>$user->username, 'parent' => $this->attic_obj->id),
+        $cat_obj = $DB->get_record('course_categories', array('idnumber'=>$user->username, 'parent' => $this->attic_obj->id),
                 '*',IGNORE_MULTIPLE);
         if ($cat_obj) {
             $coursecat = coursecat::get($cat_obj->id);

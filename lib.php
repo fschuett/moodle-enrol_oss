@@ -216,7 +216,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         $toremove = array();
         $cohorts = $this->get_cohortlist();
         foreach ($cohorts as $cohort) {
-            if (!in_array($cohort->username, $ldap_groups)) {
+            if (!in_array($cohort->idnumber, $ldap_groups)) {
                 $toremove[] = $cohort->id;
             }
         }

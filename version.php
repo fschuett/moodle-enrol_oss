@@ -26,10 +26,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2014102100;        // The current plugin version (Date: YYYYMMDDXX).
+$plugin->version   = 2014112400;        // The current plugin version (Date: YYYYMMDDXX).
 $plugin->requires  = 2013040500;        // Requires this Moodle version.
 $plugin->component = 'enrol_openlml';   // Full name of the plugin (used for diagnostics).
 $plugin->cron      = 60*60;             // Run cron every hour, because it is time consuming.
 $plugin->maturity  = MATURITY_BETA;     // Beta, nees testing.
-$plugin->release   = '0.9 (Build: 2014102100)';
+$plugin->release   = '0.9 (Build: 2014112400)';
 $plugin->dependencies = array('auth_ldap'=>ANY_VERSION, 'enrol_cohort'=>ANY_VERSION);

@@ -20,9 +20,9 @@
 +            return;
 +        }
 +
-+        mtrace("Starting synchronization for ldap auth plugin...");
++        print("Starting synchronization for for ldap auth plugin...");
 +        $this->sync_users(true);
-+        mtrace("finished.\n");
++        print("finished.\n");
 +        set_config('last_cron', date('Ymdh'), $this->pluginconfig);
 +
 +    }

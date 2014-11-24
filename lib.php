@@ -755,7 +755,7 @@ class enrol_openlml_plugin extends enrol_plugin {
     private function get_teacher_category() {
         global $CFG, $DB;
         // Create teacher category if needed.
-        $cat_obj = $DB->get_record( 'course_categories', array('idnumber'=>$this->config->teachers_course_context, 'parent' => 0),'*',IGNORE_MULTIPLE);
+        $cat_obj = $DB->get_record( 'course_categories', array('name'=>$this->config->teachers_course_context, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$cat_obj) { // Category doesn't exist.
             $cat_obj = $this->create_category($this->config->teachers_course_context,
                     get_string('teacher_context_desc', 'enrol_openlml'));
@@ -773,7 +773,7 @@ class enrol_openlml_plugin extends enrol_plugin {
      */
     private function get_teacher_attic_category() {
         global $CFG, $DB;
-        $this->attic_obj = $DB->get_record( 'course_categories', array('idnumber'=>$this->config->teachers_removed, 'parent' => 0),'*',IGNORE_MULTIPLE);
+        $this->attic_obj = $DB->get_record( 'course_categories', array('name'=>$this->config->teachers_removed, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$this->attic_obj) { // Category for removed teachers doesn't exist.
             $this->attic_obj = $this->create_category($this->config->teachers_removed,
                     get_string('attic_description', 'enrol_openlml'),0,99999,0);

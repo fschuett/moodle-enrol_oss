@@ -48,8 +48,11 @@ executed once an hour.
 
 Changelog
 ---------
+2014-11-25
+enhancement: use teachercat, atticcat intern
 2014-11-24
 fix: ignore users with auth != 'ldap'
+enhancement: use idnumber makes renaming possible
 2014-10-21
 fix: spelling error in sync.php
 2014-07-20

@@ -95,8 +95,24 @@ function xmldb_enrol_openlml_upgrade($oldversion) {
         if ($teachercontext) {
             $DB->execute("UPDATE {course_categories} SET idnumber = '".$teachercontext."' WHERE name = '".$teachercontext."'");
         }
-        $DB->execute("UPDATE {course_categories} SET idnumber = 'attic' WHERE name = 'attic'");
+        $removedcontext = get_config('enrol_openlml', 'teachers_removed');
+        if ($removedcontext) {
+            $DB->execute("UPDATE {course_categories} SET idnumber = '".$removedcontext."' WHERE name = '".$removedcontext."'");
+        }
         upgrade_plugin_savepoint(true, 2014112400, 'enrol', 'openlml');
+    }
+
+    if ($oldversion < 2014112500) {
+        // Teacher category, teacher attic category: use idnumber with constand name
+        $teachercontext = get_config('enrol_openlml', 'teachers_course_context');
+        if ($teachercontext) {
+            $DB->execute("UPDATE {course_categories} SET idnumber = 'teachercat' WHERE idnumber = '".$teachercontext."'");
+        }
+        $removedcontext = get_config('enrol_openlml', 'teachers_removed');
+        if ($removedcontext) {
+            $DB->execute("UPDATE {course_categories} SET idnumber = 'atticcat' WHERE idnumber = '".$removedcontext."'");
+        }
+        upgrade_plugin_savepoint(true, 2014112500, 'enrol', 'openlml');
     }
 
     return true;

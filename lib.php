@@ -33,6 +33,8 @@ defined('MOODLE_INTERNAL') || die();
 class enrol_openlml_plugin extends enrol_plugin {
     protected $enroltype = 'enrol_openlml';
     protected $errorlogtag = '[ENROL OPENLML] ';
+    protected $idnumber_teachers_cat = 'teachercat';
+    protected $idnumber_attic_cat = 'atticcat';
     protected $teacher_array=Array();
     protected $authldap;
     protected $teacher_obj;
@@ -144,11 +146,11 @@ class enrol_openlml_plugin extends enrol_plugin {
                     if ($DB->count_records('course_categories', array('idnumber'=>$user->username,
                 	    'parent'=>$this->teacher_obj->id)) > 1) {
                 	if (debugging())
-                            trigger_error(' There are more than one matching category named '.
+                            trigger_error(' There are more than one matching category with idnumber '.
                 		$user->username .' in '.$this->teacher_obj->name .". That is likely to cause problems.",E_USER_WARNING);
             	    }
             	    if (!$this->delete_move_teacher_to_attic($cat)) {
-                        debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->name . ' to attic.');
+                        debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->idnumber . ' to attic.');
                     }
                     $edited = true;
                 }
@@ -166,7 +168,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                     }
                 } else if ($DB->count_records('course_categories', array('idnumber'=>$user->username,
             		'parent'=>$this->teacher_obj->id)) > 1) {
-            	    debugging($this->errorlogtag . ' WARNING: there are more than one matching category named '.
+            	    debugging($this->errorlogtag . ' WARNING: there are more than one matching category with idnumber '.
         		    $user->username .' in '.$this->teacher_obj->name .". That is likely to cause problems.");
             	}
                 if ($cat AND !$this->teacher_has_role($user,$cat)) {
@@ -247,9 +249,9 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
             if ($categories = $teachercontext->get_children()) {
                 foreach ($categories as $cat) {
-                    if (!$this->is_teacher($cat->name) OR $this->is_ignored_teacher($cat->name)) {
+                    if (!$this->is_teacher($cat->idnumber) OR $this->is_ignored_teacher($cat->idnumber)) {
                         if (!$this->delete_move_teacher_to_attic($cat)) {
-                            debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->name . ' to attic.');
+                            debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->idnumber . ' to attic.');
                         }
                         $edited = true;
                     }
@@ -277,7 +279,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                     $edited = true;
                 } else if ($DB->count_records('course_categories',
                         array('idnumber'=>$teacher, 'parent' => $this->teacher_obj->id)) > 1) {
-            	    debugging($this->errorlogtag . ' WARNING: there are more than one matching category named '.
+            	    debugging($this->errorlogtag . ' WARNING: there are more than one matching category with idnumber '.
         		    $teacher .' in '.$this->teacher_obj->name .". That is likely to cause problems.");
 
                 }
@@ -755,9 +757,9 @@ class enrol_openlml_plugin extends enrol_plugin {
     private function get_teacher_category() {
         global $CFG, $DB;
         // Create teacher category if needed.
-        $cat_obj = $DB->get_record( 'course_categories', array('name'=>$this->config->teachers_course_context, 'parent' => 0),'*',IGNORE_MULTIPLE);
+        $cat_obj = $DB->get_record( 'course_categories', array('idnumber'=>$this->idnumber_teachers_cat, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$cat_obj) { // Category doesn't exist.
-            $cat_obj = $this->create_category($this->config->teachers_course_context,
+            $cat_obj = $this->create_category($this->config->teachers_course_context,$this->idnumber_teachers_cat,
                     get_string('teacher_context_desc', 'enrol_openlml'));
             if (!$cat_obj) {
                 debugging($this->errorlogtag . 'autocreate/autoremove could not create teacher course context');
@@ -773,9 +775,9 @@ class enrol_openlml_plugin extends enrol_plugin {
      */
     private function get_teacher_attic_category() {
         global $CFG, $DB;
-        $this->attic_obj = $DB->get_record( 'course_categories', array('name'=>$this->config->teachers_removed, 'parent' => 0),'*',IGNORE_MULTIPLE);
+        $this->attic_obj = $DB->get_record( 'course_categories', array('idnumber'=>$this->idnumber_attic_cat, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$this->attic_obj) { // Category for removed teachers doesn't exist.
-            $this->attic_obj = $this->create_category($this->config->teachers_removed,
+            $this->attic_obj = $this->create_category($this->config->teachers_removed, $this->idnumber_attic_cat,
                     get_string('attic_description', 'enrol_openlml'),0,99999,0);
             if (!$this->attic_obj) {
                 debugging($this->errorlogtag .'autocreate/autoremove could not create removed teachers context');
@@ -908,7 +910,8 @@ class enrol_openlml_plugin extends enrol_plugin {
         } else {
             $description = get_string('course_description', 'enrol_openlml') . ' ' .
                     $user->firstname . ' ' .$user->lastname . '(' . $user->username . ').';
-            $cat_obj = $this->create_category($user->username, $description, $this->teacher_obj->id);
+            $cat_obj = $this->create_category($user->lastname.",".$user->firstname, $user->username,
+                    $description, $this->teacher_obj->id);
             if (!$cat_obj) {
                 debugging('Could not create teacher category for teacher ' . $user->username);
                 return false;
@@ -995,25 +998,27 @@ class enrol_openlml_plugin extends enrol_plugin {
     /**
      * This function creates a course category and fixes the category path.
      * name             the new category name
+     * idnumber         the new category idnumber
      * description      a descriptive text for the new course category
      * parent           the course_categories parent object or 0 for top level category
      * sortorder        special sort order, 99999 order at end
      * @return          false|category_object
      * @uses            $DB;
      */
-    public function create_category ($name, $description, $parent = 0, $sortorder = 0, $visible = 1) {
+    public function create_category ($name, $idnumber, $description, $parent = 0, $sortorder = 0, $visible = 1) {
         global $CFG,$DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
         //trigger_error("Creating category $name ($description) with parent $parent and sortorder $sortorder",E_USER_NOTICE);
         $data = new stdClass();
-        $data->name = $data->idnumber = $name;
+        $data->name = $name;
+        $data->idnumber = $idnumber;
         $data->description = $description;
         $data->parent = $parent;
         $data->visible = $visible;
         $cat = coursecat::create($data);
         if (!$cat) {
-            debugging('Could not insert the new course category ' . $cat->name);
+            debugging('Could not insert the new course category '.$cat->name.'('.$cat->idnumber.')');
             return false;
         }
         if ($sortorder != 0) {

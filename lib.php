@@ -566,7 +566,12 @@ class enrol_openlml_plugin extends enrol_plugin {
             'idnumber' => $groupname,
             'component' => 'enrol_openlml'
         );
-        if (!$cohort = $DB->get_record('cohort', $params, '*')) {
+        if (!$cohort = $DB->get_record('cohort', $params, '*', IGNORE_MULTIPLE)) {
+            if ($DB->count_records('cohort', $params) > 1) {
+                if (debugging())
+                    trigger_error(' There are more than one matching cohort with idnumber '.
+                        $groupname .'. That is likely to cause problems.',E_USER_WARNING);
+            }
             if (!$autocreate) {
                 return false;
             }

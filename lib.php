@@ -114,14 +114,31 @@ class enrol_openlml_plugin extends enrol_plugin {
             if (!isset($cohorts[$groupname])) {
                 $cohortid = $this->get_cohort_id($groupname);
                 cohort_add_member($cohortid, $user->id);
+                $event = \enrol_openlml\event\cohort_member_added::create(array(
+                        'objectid' => $cohortid,
+                        'context' => SYSCONTEXTID,
+                        'other' => $user->id,
+                ));
+                $event->trigger();
             }
         }
 
         foreach ($cohorts as $cohort) {
             if (!in_array($cohort->idnumber, $ldap_groups)) {
                 cohort_remove_member($cohort->id, $user->id);
+                $event = \enrol_openlml\event\cohort_member_removed::create(array(
+                        'objectid' => $cohort->id,
+                        'context' => SYSCONTEXTID,
+                        'other' => $user->id,
+                ));
+                $event->trigger();
                 if (!$DB->record_exists('cohort_members', array('cohortid'=>$cohort->id))) {
                     cohort_delete_cohort($cohortid);
+                    $event = \enrol_openlml\event\cohort_removed::create(array(
+                            'objectid' => $cohortid,
+                            'context' => SYSCONTEXTID,
+                    ));
+                    $event->trigger();
                 }
             }
         }
@@ -204,12 +221,24 @@ class enrol_openlml_plugin extends enrol_plugin {
             foreach ($cohort_members as $userid => $user) {
                 if (!isset ($ldap_members[$userid])) {
                     cohort_remove_member($cohortid, $userid);
+                    $event = \enrol_openlml\event\cohort_member_removed::create(array(
+                            'objectid' => $cohortid,
+                            'context' => SYSCONTEXTID,
+                            'other' => $userid,
+                    ));
+                    $event->trigger();
                 }
             }
 
             foreach ($ldap_members as $userid => $username) {
                 if (!$this->cohort_is_member($cohortid, $userid)) {
                     cohort_add_member($cohortid, $userid);
+                    $event = \enrol_openlml\event\cohort_member_added::create(array(
+                            'objectid' => $cohortid,
+                            'context' => SYSCONTEXTID,
+                            'other' => $userid,
+                    ));
+                    $event->trigger();
                 }
             }
         }
@@ -225,6 +254,13 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!empty($toremove)) {
             $DB->delete_records_list('cohort_members', 'cohortid', $toremove);
             $DB->delete_records_list('cohort', 'id', $toremove);
+            foreach ($toremove as $cohort) {
+                $event = \enrol_openlml\event\cohort_removed::create(array(
+                        'objectid' => $cohort,
+                        'context' => SYSCONTEXTID,
+                ));
+                $event->trigger();
+            }
         }
 
         if ($this->config->teachers_category_autocreate OR $this->config->teachers_category_autoremove) {
@@ -348,10 +384,28 @@ class enrol_openlml_plugin extends enrol_plugin {
                         $enrol->add_instance($course,
                                 array('customint1' => $cohortid, 'customchar1' => $this->enroltype,
                                         'roleid' => $this->config->teachers_role));
+                        $event = \enrol_openlml\event\cohort_enroled::create(array(
+                                'objectid' => $course->id,
+                                'context' => SYSCONTEXTID,
+                                'other' => array( 
+                                        'cohort' => $cohortid, 
+                                        'role' => $this->config->teachers_role,
+                                ),
+                        ));
+                        $event->trigger();
                     } else {
                         $enrol->add_instance($course,
                                 array('customint1' => $cohortid, 'customchar1' => $this->enroltype,
                                         'roleid' => $this->config->student_role));
+                        $event = \enrol_openlml\event\cohort_enroled::create(array(
+                                'objectid' => $course->id,
+                                'context' => SYSCONTEXTID,
+                                'other' => array( 
+                                        'cohort' => $cohortid, 
+                                        'role' => $this->config->student_role,
+                                ),
+                        ));
+                        $event->trigger();
                     }
                     $edited = true;
                 }
@@ -365,12 +419,30 @@ class enrol_openlml_plugin extends enrol_plugin {
             if (!isset($idcohort[$courseid])) {
                 foreach ($instances as $cohort => $instance) {
                     $enrol->delete_instance($instance);
+                    $event = \enrol_openlml\event\cohort_unenroled::create(array(
+                            'objectid' => $courseid,
+                            'context' => SYSCONTEXTID,
+                            'other' => array( 
+                                    'cohort' => $cohort, 
+                                    'role' => 'unknown',
+                            ),
+                    ));
+                    $event->trigger();
                     $edited = true;
                 }
             } else {
                 foreach ($instances as $cohort => $instance) {
                     if (!in_array($cohort, $idcohort[$courseid])) {
                         $enrol->delete_instance($instance);
+                    $event = \enrol_openlml\event\cohort_unenroled::create(array(
+                            'objectid' => $courseid,
+                            'context' => SYSCONTEXTID,
+                            'other' => array( 
+                                    'cohort' => $cohort, 
+                                    'role' => 'unknown',
+                            ),
+                    ));
+                    $event->trigger();
                         $edited = true;
                     }
                 }
@@ -564,24 +636,25 @@ class enrol_openlml_plugin extends enrol_plugin {
         global $DB;
         $params = array (
             'idnumber' => $groupname,
-            'component' => 'enrol_openlml'
+            'component' => 'enrol_openlml',
+            'contextid' => SYSCONTEXTID,
         );
         if (!$cohort = $DB->get_record('cohort', $params, '*', IGNORE_MULTIPLE)) {
-            if ($DB->count_records('cohort', $params) > 1) {
-                if (debugging())
-                    trigger_error(' There are more than one matching cohort with idnumber '.
-                        $groupname .'. That is likely to cause problems.',E_USER_WARNING);
-            }
             if (!$autocreate) {
                 return false;
             }
             $cohort = new StdClass();
             $cohort->name = $cohort->idnumber = $groupname;
-            $cohort->contextid = get_system_context()->id;
+            $cohort->contextid = SYSCONTEXTID;
             $cohort->component='enrol_openlml';
             $cohort->description=get_string('sync_description', 'enrol_openlml');
             $cohortid = cohort_add_cohort($cohort);
         } else {
+            if ($DB->count_records('cohort', $params) > 1) {
+                if (debugging())
+                    trigger_error(' There are more than one matching cohort with idnumber '.
+                        $groupname .'. That is likely to cause problems.',E_USER_WARNING);
+            }
             $cohortid = $cohort->id;
         }
         return $cohortid;
@@ -590,17 +663,21 @@ class enrol_openlml_plugin extends enrol_plugin {
     private function get_cohortlist($userid = "*") {
         global $DB;
         if ($userid != "*") {
-            $sql = " SELECT DISTINCT c.id, c.idnumber, c.name
+            $sql = "SELECT DISTINCT c.id, c.idnumber, c.name
                     FROM {cohort} c
                     JOIN {cohort_members} cm ON cm.cohortid = c.id
                     JOIN {user} u ON cm.userid = u.id
-                            WHERE (c.component = 'enrol_openlml' AND u.username = :userid AND u.auth = 'ldap')";
+                            WHERE (c.component = 'enrol_openlml' 
+                                    AND u.username = :userid 
+                                    AND u.auth = 'ldap'
+                                    AND c.contextid = ".SYSCONTEXTID.")";
             $params['userid'] = $userid;
             $records = $DB->get_records_sql($sql, $params);
         } else {
             $sql = " SELECT DISTINCT c.id, c.idnumber, c.name
                     FROM {cohort} c
-                            WHERE c.component = 'enrol_openlml'";
+                            WHERE c.component = 'enrol_openlml'
+                            AND c.contextid = ".SYSCONTEXTID;
             $records = $DB->get_records_sql($sql);
         }
         $ret = array();
@@ -620,8 +697,9 @@ class enrol_openlml_plugin extends enrol_plugin {
         global $DB;
         $ret = array();
         // fill $cohortname: id => idnumber
-        $sql = " SELECT DISTINCT c.id,c.idnumber
-                FROM {cohort} c";
+        $sql = "SELECT DISTINCT c.id,c.idnumber
+                FROM {cohort} c WHERE c.component = 'enrol_openlml'
+                AND c.contextid=".SYSCONTEXTID;
         $records = $DB->get_records_sql($sql);
         $cohortname = array();
         foreach($records as $record) {
@@ -766,6 +844,11 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!$cat_obj) { // Category doesn't exist.
             $cat_obj = $this->create_category($this->config->teachers_course_context,$this->idnumber_teachers_cat,
                     get_string('teacher_context_desc', 'enrol_openlml'));
+            $event = \enrol_openlml\event\teachers_category_created::create(array(
+                    'objectid' => $cat_obj->id,
+                    'context' => $context_coursecat::instance($cat_obj->id),
+            ));
+            $event->trigger();
             if (!$cat_obj) {
                 debugging($this->errorlogtag . 'autocreate/autoremove could not create teacher course context');
             }
@@ -784,6 +867,11 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!$this->attic_obj) { // Category for removed teachers doesn't exist.
             $this->attic_obj = $this->create_category($this->config->teachers_removed, $this->idnumber_attic_cat,
                     get_string('attic_description', 'enrol_openlml'),0,99999,0);
+            $event = \enrol_openlml\event\attic_category_created::create(array(
+                    'objectid' => $attic_obj->id,
+                    'context' => $context_coursecat::instance($attic_obj->id),
+            ));
+            $event->trigger();
             if (!$this->attic_obj) {
                 debugging($this->errorlogtag .'autocreate/autoremove could not create removed teachers context');
             }
@@ -832,10 +920,21 @@ class enrol_openlml_plugin extends enrol_plugin {
         }
         
         if ($deletable) {
+            $event = \enrol_openlml\event\teacher_category_removed::create(array(
+                    'objectid' => $teachercat->id,
+                    'context' => $context_coursecat::instance($teachercat->id),
+            ));
+            $event->trigger();
             $teachercat->delete_full(true);
         }
         else {
             $teachercat->change_parent($this->attic_obj);
+            $event = \enrol_openlml\event\teachers_category_moved::create(array(
+                    'objectid' => $teachercat->id,
+                    'context' => $context_coursecat::instance($teachercat->id),
+                    'other' => $teachercat->parent,
+            ));
+            $event->trigger();
         }
         
         return true;
@@ -911,6 +1010,12 @@ class enrol_openlml_plugin extends enrol_plugin {
             $coursecat = coursecat::get($cat_obj->id);
             if ($coursecat->can_change_parent($this->teacher_obj->id)) {
                 $coursecat->change_parent($this->teacher_obj->id);
+                $event = \enrol_openlml\event\teachers_category_moved::create(array(
+                        'objectid' => $cat_obj->id,
+                        'context' => $context_coursecat::instance($cat_obj->id),
+                        'other' => $cat_obj->parent,
+                ));
+                $event->trigger();
             }
         } else {
             $description = get_string('course_description', 'enrol_openlml') . ' ' .
@@ -921,6 +1026,11 @@ class enrol_openlml_plugin extends enrol_plugin {
                 debugging('Could not create teacher category for teacher ' . $user->username);
                 return false;
             }
+            $event = \enrol_openlml\event\teachers_category_created::create(array(
+                    'objectid' => $cat_obj->id,
+                    'context' => $context_coursecat::instance($cat_obj->id),
+            ));
+            $event->trigger();
         }
         return $cat_obj;
     }
@@ -973,6 +1083,12 @@ class enrol_openlml_plugin extends enrol_plugin {
                     $user->username . ') in context (' . $teacherscontext->id . ').');
             return false;
         }
+        $event = \enrol_openlml\event\teacher_role_assigned::create(array(
+                'objectid' => $teacherscontext->id,
+                'context' => $context_coursecat::instance($teacherscontext->id),
+                'other' => $user->id,
+        ));
+        $event->trigger();
         return true;
     }
 
@@ -997,6 +1113,12 @@ class enrol_openlml_plugin extends enrol_plugin {
         // Removes teachers configured course role.
         $teacherscontext = context_coursecat::instance($cat->id);
         role_unassign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_openlml');
+        $event = \enrol_openlml\event\teacher_role_unassigned::create(array(
+                'objectid' => $teacherscontext->id,
+                'context' => $context_coursecat::instance($teacherscontext->id),
+                'other' => $user->id,
+        ));
+        $event->trigger();
         return true;
     }
 

@@ -13,23 +13,37 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
+ 
 /**
- * OpenML enrolment plugin version specification.
+ * The cohort_enroled event.
  *
  * @package    enrol
  * @subpackage openlml
- * @author     Frank Schütte
- * @copyright  2012 Frank Schütte <fschuett@gymnasium-himmelsthuer.de>
+ * @copyright  2015 Frank Schütte
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
+namespace enrol_openlml\event;
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2015012100;        // The current plugin version (Date: YYYYMMDDXX).
-$plugin->requires  = 2013111800;        // Requires Moodle version 2.6.
-$plugin->component = 'enrol_openlml';   // Full name of the plugin (used for diagnostics).
-$plugin->cron      = 60*60;             // Run cron every hour, because it is time consuming.
-$plugin->maturity  = MATURITY_BETA;     // Beta, nees testing.
-$plugin->release   = '1.0 (Build: 2015012100)';
-$plugin->dependencies = array('auth_ldap'=>ANY_VERSION, 'enrol_cohort'=>ANY_VERSION);
+/**
+ * Class cohort_enroled
+ *
+ * @property-read array $other {
+ *          string cohort: cohort->idnumber
+ *          string role:   used role
+ */
+class cohort_enroled extends \core\event\base {
+    protected function init() {
+        $this->data['crud'] = 'u'; // c(reate), r(ead), u(pdate), d(elete)
+        $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
+        $this->data['objecttable'] = 'course';
+    }
+ 
+    public static function get_name() {
+        return get_string('eventcohort_enroled', 'enrol_openlml');
+    }
+ 
+    public function get_description() {
+        return "The user with id {$this->userid} enroled cohort {$this->other->cohort} as {$this->other->role} in course {$this->objectid}.";
+    }
+}

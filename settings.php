@@ -56,7 +56,7 @@ if ($ADMIN->fulltree) {
             get_string('teachers_group_name_key', 'enrol_openlml'),
             get_string('teachers_group_name', 'enrol_openlml'), 'teachers'));
     if (!during_initial_install()) {
-        $options = get_default_enrol_roles(get_context_instance(CONTEXT_SYSTEM));
+        $options = get_default_enrol_roles(context_system::instance());
         $student = get_archetype_roles('student');
         $student = reset($student);
         $settings->add(new admin_setting_configselect('enrol_openlml/teachers_role',
@@ -74,7 +74,7 @@ if ($ADMIN->fulltree) {
             get_string('teachers_course_context_key', 'enrol_openlml'),
             get_string('teachers_course_context', 'enrol_openlml'), 'Lehrer'));
     if (!during_initial_install()) {
-        $options = get_assignable_roles(get_context_instance(CONTEXT_SYSTEM));
+        $options = get_assignable_roles(context_system::instance());
         $coursecreator = get_archetype_roles('coursecreator');
         $coursecreator = reset($coursecreator);
         $settings->add(new admin_setting_configselect('enrol_openlml/teachers_course_role',
@@ -106,7 +106,7 @@ if ($ADMIN->fulltree) {
             get_string('student_project_prefix_key', 'enrol_openlml'),
             get_string('student_project_prefix', 'enrol_openlml'), 'p_'));
     if (!during_initial_install()) {
-        $options = get_default_enrol_roles(get_context_instance(CONTEXT_SYSTEM));
+        $options = get_default_enrol_roles(context_system::instance());
         $student = get_archetype_roles('student');
         $student = reset($student);
         $settings->add(new admin_setting_configselect('enrol_openlml/student_role',

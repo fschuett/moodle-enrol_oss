@@ -48,9 +48,9 @@ executed once an hour.
 
 Changelog
 ---------
-2015-01-21
-version 1.0 requires moodle 2.6 (new logging api)
-new logging api with events implemented
+2015-01-22
+version 1.0 requires moodle 2.5
+add lots of mtrace messages
 fix: don't error with multiple matching cohorts
 2014-11-25
 enhancement: use teachercat, atticcat intern

@@ -197,6 +197,8 @@ class enrol_openlml_plugin extends enrol_plugin {
         global $CFG, $DB;
         require_once($CFG->libdir . '/coursecatlib.php');
         
+        debugging($this->errorlogtag.'sync_enrolments... started '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $ldap_groups = $this->ldap_get_grouplist();
 
         foreach ($ldap_groups as $group => $groupname) {
@@ -219,7 +221,8 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
         }
 
-        // Remove unneeded cohorts.
+        debugging($this->errorlogtag.'sync_enrolments: remove unneeded cohorts... started '
+            . date("H:i:s"), DEBUG_DEVELOPER);
         $toremove = array();
         $cohorts = $this->get_cohortlist();
         foreach ($cohorts as $cohort) {
@@ -247,7 +250,9 @@ class enrol_openlml_plugin extends enrol_plugin {
         }
 
         $edited = false;
-        // Autoremove teacher course categories of removed teachers if requested.
+        
+        debugging($this->errorlogtag.'sync_enrolments: autoremove teacher course categories '
+            . ' of removed teachers if requested... started '.date("H:i:s"), DEBUG_DEVELOPER);
         if ($this->config->teachers_category_autoremove) {
             $teachercontext = coursecat::get($this->teacher_obj->id);
             if (empty($teachercontext)) {
@@ -266,7 +271,8 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
         }
 
-        // Autocreate teacher course categories for new teachers if requrested.
+        debugging($this->errorlogtag.'sync_enrolments: autocreate teacher course categories '
+            . 'for new teachers if requested... started '.date("H:i:s"), DEBUG_DEVELOPER);
         if ($this->config->teachers_category_autocreate) {
             foreach ($this->teacher_array as $teacher) {
                 if (empty($teacher) OR $this->is_ignored_teacher($teacher)) {
@@ -296,6 +302,8 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
         }
         if ($edited) {
+            debugging($this->errorlogtag.'sync_enrolments: resort categories... started '
+                . date("H:i:s"), DEBUG_DEVELOPER);
             $this->resort_categories($this->teacher_obj->id);
         }
 
@@ -341,6 +349,7 @@ class enrol_openlml_plugin extends enrol_plugin {
     public function sync_cohort_enrolments() {
         global $DB, $CFG;
         require_once($CFG->dirroot . '/enrol/cohort/locallib.php');
+        debugging($this->errorlogtag.'sync_cohort_enrolments... started '.date("H:i:s"), DEBUG_DEVELOPER);
         $edited = false;
 
         $enrol = enrol_get_plugin('cohort');
@@ -462,6 +471,9 @@ class enrol_openlml_plugin extends enrol_plugin {
      */
     private function ldap_get_grouplist($username = "*") {
         global $CFG, $DB;
+        
+        debugging($this->errorlogtag.'ldap_get_grouplist... started '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         if (!isset($authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
         }
@@ -522,6 +534,8 @@ class enrol_openlml_plugin extends enrol_plugin {
     private function ldap_get_group_members($group, $teachers_ok = false) {
         global $CFG, $DB;
 
+        debugging($this->errorlogtag.'ldap_get_group_members('.$group.')... started '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $ret = array ();
         $members = array ();
         if (!isset($authldap) or empty($authldap)) {
@@ -573,6 +587,9 @@ class enrol_openlml_plugin extends enrol_plugin {
 
     private function get_cohort_id($groupname, $autocreate = true) {
         global $DB;
+        
+        debugging($this->errorlogtag.'get_cohort_id('.$groupname.')... started '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $params = array (
             'idnumber' => $groupname,
             'component' => 'enrol_openlml',
@@ -682,6 +699,9 @@ class enrol_openlml_plugin extends enrol_plugin {
 
     private function get_cohort_members($cohortid) {
         global $DB;
+        
+        debugging($this->errorlogtag.'get_cohort_members('.$cohortid.')... started '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $sql = " SELECT u.id, u.username
                           FROM {user} u
                          JOIN {cohort_members} cm ON (cm.userid = u.id AND cm.cohortid = :cohortid)

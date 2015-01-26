@@ -48,22 +48,33 @@ executed once an hour.
 
 Changelog
 ---------
+
 2015-01-26
 more debug messages for sync_enrolments
+
 2015-01-22
 version 1.0 requires moodle 2.5
+
 add lots of mtrace messages
+
 fix: don't error with multiple matching cohorts
+
 2014-11-25
 enhancement: use teachercat, atticcat intern
+
 2014-11-24
 fix: ignore users with auth != 'ldap'
+
 enhancement: use idnumber makes renaming possible
+
 2014-10-21
 fix: spelling error in sync.php
+
 2014-07-20
 fix: make auth without ldap connection work
+
 remove deprecated get_context_instance
+
 2013-11-27
 fix: cohort enrolments are now removed correctly
 

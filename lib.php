@@ -548,6 +548,8 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!$ldapconnection) {
             return $ret;
         }
+        debugging($this->errorlogtag.'ldap_get_group_members... connected to ldap '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $queryg = "(&(cn=" . trim($group) . ")(objectClass=" . $this->config->object . "))";
         $contexts = explode(';', $this->config->contexts);
 
@@ -556,10 +558,14 @@ class enrol_openlml_plugin extends enrol_plugin {
             if (empty ($context)) {
                 continue;
             }
-
+            
+            debugging($this->errorlogtag.'ldap_get_group_members... ldap_search('
+                .$context.'|'.$queryg.')'.date("H:i:s"), DEBUG_DEVELOPER);
             $resultg = ldap_search($ldapconnection, $context, $queryg);
 
             if (!empty ($resultg) AND ldap_count_entries($ldapconnection, $resultg)) {
+                debugging($this->errorlogtag.'ldap_get_group_members... ldap_get_entries()'
+                    .date("H:i:s"), DEBUG_DEVELOPER);
                 $group = ldap_get_entries($ldapconnection, $resultg);
 
                 if (isset($group[0][$this->config->member_attribute])) {
@@ -572,6 +578,8 @@ class enrol_openlml_plugin extends enrol_plugin {
                 }
             }
         }
+        debugging($this->errorlogtag.'ldap_get_group_members... ldap_close()'.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $authldap->ldap_close();
         foreach ($members as $member) {
             $params = array (

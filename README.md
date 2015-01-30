@@ -48,6 +48,8 @@ executed once an hour.
 
 Changelog
 ---------
+2015-01-30
+added debug messages for ldap_get_group_members
 
 2015-01-26
 more debug messages for sync_enrolments

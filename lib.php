@@ -477,8 +477,11 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!isset($authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
         }
+        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_connect '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $ldapconnection = $this->ldap_connect_ul($authldap);
-
+        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $fresult = array ();
         if (!$ldapconnection) {
             return $fresult;
@@ -515,7 +518,11 @@ class enrol_openlml_plugin extends enrol_plugin {
                 array_push($fresult, ($groups[$i][$this->config->attribute][0]));
             }
         }
+        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_close '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $authldap->ldap_close();
+        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_closed '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         // Remove teachers from all but teachers groups.
         if ($username != "*" AND $this->is_teacher($username)) {
             foreach ($fresult as $i => $group) {
@@ -541,7 +548,11 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!isset($authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
         }
+        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_connect '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $ldapconnection = $this->ldap_connect_ul($authldap);
+        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
+            DEBUG_DEVELOPER);
 
         $group = textlib::convert($group, 'utf-8', $this->config->ldapencoding);
 
@@ -578,9 +589,11 @@ class enrol_openlml_plugin extends enrol_plugin {
                 }
             }
         }
-        debugging($this->errorlogtag.'ldap_get_group_members... ldap_close()'.date("H:i:s"),
+        debugging($this->errorlogtag.'ldap_get_group_members... ldap_close '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $authldap->ldap_close();
+        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_closed '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         foreach ($members as $member) {
             $params = array (
                 'username' => $member,

@@ -548,7 +548,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!isset($authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
         }
-        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_connect '.date("H:i:s"),
+        debugging($this->errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $ldapconnection = $this->ldap_connect_ul($authldap);
         debugging($this->errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
@@ -580,6 +580,10 @@ class enrol_openlml_plugin extends enrol_plugin {
                 $group = ldap_get_entries($ldapconnection, $resultg);
 
                 if (isset($group[0][$this->config->member_attribute])) {
+                    debugging($this->errorlogtag.'ldap_get_group_members... entries('
+                        .$this->config->member_attribute.'|'.$group[0][$this->config->member_attribute].')'
+                        .'('.count($group[0][$this->config->member_attribute]).')'
+                        .date("H:i:s"), DEBUG_DEVELOPER);
                     for ($g = 0; $g < (count($group[0][$this->config->member_attribute]) - 1); $g++) {
                         $member = trim($group[0][$this->config->member_attribute][$g]);
                         if ($member != "" AND ($teachers_ok OR !$this->is_teacher($member))) {
@@ -592,7 +596,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         debugging($this->errorlogtag.'ldap_get_group_members... ldap_close '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $authldap->ldap_close();
-        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_closed '.date("H:i:s"),
+        debugging($this->errorlogtag.'ldap_get_groupmembers... ldap_closed '.date("H:i:s"),
             DEBUG_DEVELOPER);
         foreach ($members as $member) {
             $params = array (
@@ -792,6 +796,8 @@ class enrol_openlml_plugin extends enrol_plugin {
      * @uses $CFG
      */
     private function is_teacher($userid) {
+        debugging($this->errorlogtag.'is_teacher('.$userid.')... started '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         if (empty($this->teacher_array)) {
             $this->init_teacher_array();
         }
@@ -805,7 +811,11 @@ class enrol_openlml_plugin extends enrol_plugin {
      */
     private function init_teacher_array() {
         global $CFG;
+        debugging($this->errorlogtag.'init_teacher_array... started '.date("H:i:s"),
+            DEBUG_DEVELOPER);
         $this->teacher_array = $this->ldap_get_group_members($this->config->teachers_group_name, true);
+        debugging($this->errorlogtag.'init_teacher_array... ended '.date("H:i:s"),
+            DEBUG_DEVELOPER);        
         if (empty($this->teacher_array)) {
             return false;
         }

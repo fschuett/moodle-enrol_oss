@@ -599,12 +599,26 @@ class enrol_openlml_plugin extends enrol_plugin {
         debugging($this->errorlogtag.'ldap_get_groupmembers... ldap_closed '.date("H:i:s"),
             DEBUG_DEVELOPER);
         foreach ($members as $member) {
+            debugging($this->errorlogtag.'ldap_get_group_members... get_record('.$member.') '
+                .date("H:i:s"), DEBUG_DEVELOPER);
             $params = array (
                 'username' => $member,
                 'auth' => 'ldap'
             );
-            if ($user = $DB->get_record('user', $params, 'id, username')) {
+            if ($user = $DB->get_record('user', $params, 'id, username', IGNORE_MULTIPLE)) {
+                if ($DB->count_records('user', $params) > 1) {
+                    if (debugging())
+                        trigger_error(' There are more than one matching user with uid '.
+                            $member .' in user. That is likely to cause problems.',E_USER_WARNING);
+                }
+                debugging($this->errorlogtag.'ldap_get_group_members... got('.$user->id.'->'
+                    .$user->username.') '.date("H:i:s"), DEBUG_DEVELOPER);
                 $ret[$user->id] = $user->username;
+            } else {
+                if (debugging())
+                    trigger_error(' There is no matching user with uid '.
+                        $member .' and auth ldap in user. '
+                        .' That is not supposed to happen.',E_USER_WARNING);
             }
         }
         return $ret;

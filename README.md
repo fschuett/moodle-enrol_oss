@@ -48,6 +48,8 @@ executed once an hour.
 
 Changelog
 ---------
+2015-02-02 optimized teacher record fetching
+
 2015-01-31 add debug messages for ldap connection/close, init_teacher_array, is_teacher
 
 2015-01-30 added debug messages for ldap_get_group_members

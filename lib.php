@@ -846,7 +846,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!$cat_obj) { // Category doesn't exist.
             $cat_obj = $this->create_category($this->config->teachers_course_context,$this->idnumber_teachers_cat,
                     get_string('teacher_context_desc', 'enrol_openlml'));
-            //debugging($this->errorlogtag."created teachers course category ".$cat_obj->id, DEBUG_DEVELOPER);
+            debugging($this->errorlogtag."created teachers course category ".$cat_obj->id, DEBUG_DEVELOPER);
             if (!$cat_obj) {
                 debugging($this->errorlogtag . 'autocreate/autoremove could not create teacher course context');
             }
@@ -865,7 +865,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         if (!$this->attic_obj) { // Category for removed teachers doesn't exist.
             $this->attic_obj = $this->create_category($this->config->teachers_removed, $this->idnumber_attic_cat,
                     get_string('attic_description', 'enrol_openlml'),0,99999,0);
-            //debugging($this->errorlogtag."created attic course category ".$cat_obj->id, DEBUG_DEVELOPER);
+            debugging($this->errorlogtag."created attic course category ".$cat_obj->id, DEBUG_DEVELOPER);
             if (!$this->attic_obj) {
                 debugging($this->errorlogtag .'autocreate/autoremove could not create removed teachers context');
             }
@@ -915,11 +915,11 @@ class enrol_openlml_plugin extends enrol_plugin {
         
         if ($deletable) {
             $teachercat->delete_full(true);
-            //debugging($this->errorlogtag."removed teacher category ".$teachercat->id, DEBUG_DEVELOPER);
+            debugging($this->errorlogtag."removed teacher category ".$teachercat->id, DEBUG_DEVELOPER);
         }
         else {
             $teachercat->change_parent($this->attic_obj);
-            //debugging($this->errorlogtag."moved teacher category ".$teachercat->id." to attic", DEBUG_DEVELOPER);
+            debugging($this->errorlogtag."moved teacher category ".$teachercat->id." to attic", DEBUG_DEVELOPER);
         }
         
         return true;
@@ -995,7 +995,7 @@ class enrol_openlml_plugin extends enrol_plugin {
             $coursecat = coursecat::get($cat_obj->id);
             if ($coursecat->can_change_parent($this->teacher_obj->id)) {
                 $coursecat->change_parent($this->teacher_obj->id);
-                //debugging($this->errorlogtag."moved teacher category ".$cat_obj->id." to teachers category", DEBUG_DEVELOPER);
+                debugging($this->errorlogtag."moved teacher category ".$cat_obj->id." to teachers category", DEBUG_DEVELOPER);
             }
         } else {
             $description = get_string('course_description', 'enrol_openlml') . ' ' .
@@ -1006,7 +1006,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                 debugging($this->errorlogtag.'Could not create teacher category for teacher ' . $user->username);
                 return false;
             }
-            //debugging($this->errorlogtag."created teacher category ".$cat_obj->id." for ".$user-id."(".$user->lastname.",".$user-firstname.")", DEBUG_DEVELOPER);
+            debugging($this->errorlogtag."created teacher category ".$cat_obj->id." for ".$user-id."(".$user->lastname.",".$user-firstname.")", DEBUG_DEVELOPER);
         }
         return $cat_obj;
     }
@@ -1059,7 +1059,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                     $user->username . ') in context (' . $teacherscontext->id . ').');
             return false;
         }
-        //debugging($this->errorlogtag."assign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
+        debugging($this->errorlogtag."assign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
         return true;
     }
 
@@ -1084,7 +1084,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         // Removes teachers configured course role.
         $teacherscontext = context_coursecat::instance($cat->id);
         role_unassign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_openlml');
-        //debugging($this->errorlogtag."unassign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
+        debugging($this->errorlogtag."unassign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
         return true;
     }
 
@@ -1102,7 +1102,8 @@ class enrol_openlml_plugin extends enrol_plugin {
         global $CFG,$DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
-        //trigger_error("Creating category $name ($description) with parent $parent and sortorder $sortorder",E_USER_NOTICE);
+        debugging($this->errorlogtag."create_category... $name ($description) parent($parent),\n"
+            ."          sortorder($sortorder) ".date("H:i:s"), DEBUG_DEVELOPER);
         $data = new stdClass();
         $data->name = $name;
         $data->idnumber = $idnumber;
@@ -1115,7 +1116,8 @@ class enrol_openlml_plugin extends enrol_plugin {
             return false;
         }
         if ($sortorder != 0) {
-            //trigger_error('Changing course sortorder to ' . $sortorder,E_USER_NOTICE);
+            debugging($this->errorlogtag.'Changing course sortorder('.$sortorder.') '
+                . date("H:i:s"), DEBUG_DEVELOPER);
             $DB->set_field('course_categories', 'sortorder', $sortorder, array('id' => $cat->id));
             context_coursecat::instance($cat->id)->mark_dirty();
             fix_course_sortorder();

@@ -554,7 +554,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         debugging($this->errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
 
-        $group = textlib::convert($group, 'utf-8', $this->config->ldapencoding);
+        $group = core_text::convert($group, 'utf-8', $this->config->ldapencoding);
 
         if (!$ldapconnection) {
             return $ret;

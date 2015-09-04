@@ -577,15 +577,15 @@ class enrol_openlml_plugin extends enrol_plugin {
             if (!empty ($resultg) AND ldap_count_entries($ldapconnection, $resultg)) {
                 debugging($this->errorlogtag.'ldap_get_group_members... ldap_get_entries()'
                     .date("H:i:s"), DEBUG_DEVELOPER);
-                $group = ldap_get_entries($ldapconnection, $resultg);
+                $entries = ldap_get_entries($ldapconnection, $resultg);
 
-                if (isset($group[0][$this->config->member_attribute])) {
+                if (isset($entries[0][$this->config->member_attribute])) {
                     debugging($this->errorlogtag.'ldap_get_group_members... entries('
-                        .$this->config->member_attribute.'|'.$group[0][$this->config->member_attribute].')'
-                        .'('.count($group[0][$this->config->member_attribute]).')'
+                        .$this->config->member_attribute.'|'.$entries[0][$this->config->member_attribute].')'
+                        .'('.count($entries[0][$this->config->member_attribute]).')'
                         .date("H:i:s"), DEBUG_DEVELOPER);
-                    for ($g = 0; $g < (count($group[0][$this->config->member_attribute]) - 1); $g++) {
-                        $member = trim($group[0][$this->config->member_attribute][$g]);
+                    for ($g = 0; $g < (count($entries[0][$this->config->member_attribute]) - 1); $g++) {
+                        $member = trim($entries[0][$this->config->member_attribute][$g]);
                         if ($member != "" AND ($teachers_ok OR !$this->is_teacher($member))) {
                             $members[] = $member;
                         }

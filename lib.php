@@ -1006,7 +1006,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                 debugging($this->errorlogtag.'Could not create teacher category for teacher ' . $user->username);
                 return false;
             }
-            debugging($this->errorlogtag."created teacher category ".$cat_obj->id." for ".$user-id."(".$user->lastname.",".$user-firstname.")", DEBUG_DEVELOPER);
+            debugging($this->errorlogtag."created teacher category ".$cat_obj->id." for ".$user-id."(".$user->lastname.",".$user->firstname.")", DEBUG_DEVELOPER);
         }
         return $cat_obj;
     }

@@ -940,8 +940,8 @@ class enrol_openlml_plugin extends enrol_plugin {
         }
         if ($categories = $teacher_cat->get_children()) {
             $property = 'name';
-            $sortflag = collatorlib::SORT_STRING;
-            if (!collatorlib::asort_objects_by_property($categories, $property, $sortflag)) {
+            $sortflag = core_collator::SORT_STRING;
+            if (!core_collator::asort_objects_by_property($categories, $property, $sortflag)) {
                 debugging($this->errorlogtag . 'Sorting with asort_objects_by_property error.');
                 return false;
             }

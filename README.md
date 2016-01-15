@@ -48,6 +48,8 @@ executed once an hour.
 
 Changelog
 ---------
+2016-01-15 replace collatorlib with core_collator
+
 2015-02-02 optimized teacher record fetching, more debug messages for developers
 
 2015-01-31 add debug messages for ldap connection/close, init_teacher_array, is_teacher

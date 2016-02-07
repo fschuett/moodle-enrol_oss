@@ -1,17 +1,18 @@
 moodle-enrol_openlml
 ====================
 
-enrolment plugin for moodle from 2.x to autoenrol in
-conjunction with the open linux Musterlösungplugin enrol_openlml.
+enrolment plugin for moodle from 3.x to autoenrol in
+conjunction with the open linuxmuster.net enrol_openlml.
 
 This module superseedes the module enrol_lml(Moodle 1.x).
+
 It is supposed to work with the
 
 Linux Musterlösung(paedML) Ba-Wü Germany
 
 and with the
 
-Open Linux Musterlösung(openLML) http://www.linuxmuster.net
+Open Linuxmuster.net http://www.linuxmuster.net
 
 servers.
 
@@ -31,23 +32,15 @@ Cron-Job
 This module is processed by cron on an hourly basis, as is enrol_cohort
 equally.
 
-The module auth_ldap is not automatically processed by cron. You can
-either set up a job yourself as described in
+The module auth_ldap is not automatically processed by cron.
+There is a scheduled task available but it is deactivated by default.
 
-/auth/ldap/cli/sync_user.php
-
-or you include auth_ldap in the hourly job. For this to work you must
-use the patch for auth_ldap:
-
-cd <moodledir>/auth/ldap
-
-patch <../../enrol/openlml/auth_ldap.patch
-
-The patch adds a cron() method to the auth_ldap plugin that is
-executed once an hour.
+Activate it and schedule it for hourly execution.
 
 Changelog
 ---------
+2016-02-07 add scheduled task, remove auth_ldap.patch
+
 2016-01-15 replace collatorlib with core_collator
 
 2015-02-02 optimized teacher record fetching, more debug messages for developers
@@ -98,4 +91,4 @@ fixed cron patch for auth_ldap to run once an hour.
 in moodle users database.
 
 Hildesheim, Germany
-Frank Schütte,2015(fschuett@gymnasium-himmelsthuer.de)
+Frank Schütte,2016(fschuett@gymhim.de)

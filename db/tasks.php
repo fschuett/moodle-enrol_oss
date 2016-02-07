@@ -28,7 +28,7 @@ $tasks = array(
     array(
         'classname' => '\enrol_openlml\task\openlml_sync_task',
         'blocking' => 0,
-        'minute' => '19',
+        'minute' => '51',
         'hour' => '*',
         'day' => '*',
         'dayofweek' => '*',

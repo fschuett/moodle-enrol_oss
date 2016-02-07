@@ -35,6 +35,7 @@ $string['member_attribute'] = 'LDAP group member attribute, usually memberuid';
 $string['member_attribute_key'] = 'group attribute';
 $string['object'] = 'LDAP object class, usually posixGroup';
 $string['object_key'] = 'object class';
+$string['openlmlsync'] = 'openlml enrolment sync';
 $string['pluginname_desc'] = '<p>This plugin is supposed to be used with german <strong>Open LML</strong> school server and is tailored to it\'s LDAP structure.</p><p>This plugin enrols users into courses based on the course <strong>idnumber</strong> (note: idnumber is a unique field, so make it unique by prepending course "shortname:")</p>';
 $string['pluginname'] = 'Open LML Enrolment';
 $string['pluginnotenabled'] = 'Plugin not enabled!';

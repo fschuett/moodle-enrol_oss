@@ -570,8 +570,9 @@ class enrol_openlml_plugin extends enrol_plugin {
                 continue;
             }
             
-            debugging($this->errorlogtag.'ldap_get_group_members... ldap_search('
-                .$context.'|'.$queryg.')'.date("H:i:s"), DEBUG_DEVELOPER);
+            debugging($this->errorlogtag . 
+                sprintf('ldap_get_group_members... ldap_search(%s|%s) %s',
+                    $context, $queryg, date("H:i:s")), DEBUG_DEVELOPER);
             $resultg = ldap_search($ldapconnection, $context, $queryg);
 
             if (!empty ($resultg) AND ldap_count_entries($ldapconnection, $resultg)) {
@@ -580,10 +581,11 @@ class enrol_openlml_plugin extends enrol_plugin {
                 $entries = ldap_get_entries($ldapconnection, $resultg);
 
                 if (isset($entries[0][$this->config->member_attribute])) {
-                    debugging($this->errorlogtag.'ldap_get_group_members... entries('
-                        .$this->config->member_attribute.'|'.$entries[0][$this->config->member_attribute].')'
-                        .'('.count($entries[0][$this->config->member_attribute]).')'
-                        .date("H:i:s"), DEBUG_DEVELOPER);
+                    debugging($this->errorlogtag . 
+                        sprintf('ldap_get_group_members... entries(%s|%s)(%d) %s',
+                            $this->config->member_attribute, $entries[0][$this->config->member_attribute],
+                            count($entries[0][$this->config->member_attribute]),
+                            date("H:i:s")), DEBUG_DEVELOPER);
                     for ($g = 0; $g < (count($entries[0][$this->config->member_attribute]) - 1); $g++) {
                         $member = trim($entries[0][$this->config->member_attribute][$g]);
                         if ($member != "" AND ($teachers_ok OR !$this->is_teacher($member))) {

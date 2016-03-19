@@ -261,6 +261,12 @@ class enrol_openlml_plugin extends enrol_plugin {
             }
             if ($categories = $teachercontext->get_children()) {
                 foreach ($categories as $cat) {
+                	if (empty($cat->idnumber)) {
+                		debugging($this->errorlogtag . 
+                				sprintf('teacher category %s number %d without teacher userid',
+                						$cat->name, $cat->id));
+                		continue;
+                	}
                     if (!$this->is_teacher($cat->idnumber) OR $this->is_ignored_teacher($cat->idnumber)) {
                         if (!$this->delete_move_teacher_to_attic($cat)) {
                             debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->idnumber . ' to attic.');
@@ -582,8 +588,8 @@ class enrol_openlml_plugin extends enrol_plugin {
 
                 if (isset($entries[0][$this->config->member_attribute])) {
                     debugging($this->errorlogtag . 
-                        sprintf('ldap_get_group_members... entries(%s|%s)(%d) %s',
-                            $this->config->member_attribute, $entries[0][$this->config->member_attribute],
+                        sprintf('ldap_get_group_members... entries(%s)(%d) %s',
+                            $this->config->member_attribute,
                             count($entries[0][$this->config->member_attribute]),
                             date("H:i:s")), DEBUG_DEVELOPER);
                     for ($g = 0; $g < (count($entries[0][$this->config->member_attribute]) - 1); $g++) {
@@ -607,8 +613,14 @@ class enrol_openlml_plugin extends enrol_plugin {
                 $select = "'" . $member . "'";
             }
         }
-        debugging($this->errorlogtag."ldap_get_group_members... (".$select. ") ".date("H:i:s"),
-            DEBUG_DEVELOPER);
+        if (isset($select)) {
+        	debugging($this->errorlogtag."ldap_get_group_members... (".$select. ") ".date("H:i:s"),
+            	DEBUG_DEVELOPER);
+        }
+        else {
+        	debugging($this->errorlogtag."ldap_get_group_members... (no selected users) ".date("H:i:s"),
+        			DEBUG_DEVELOPER);
+        }
         if (isset($select)) {
             $select = "username IN (" . $select . ")";
             $members = $DB->get_recordset_select('user',$select,null,null,'id,username');
@@ -812,6 +824,10 @@ class enrol_openlml_plugin extends enrol_plugin {
     private function is_teacher($userid) {
         debugging($this->errorlogtag.'is_teacher('.$userid.')... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
+        if (empty($userid)) {
+        	debugging($this->errorlogtag.'is_teacher called with empty userid.');
+        	return false;
+        }
         if (empty($this->teacher_array)) {
             $this->init_teacher_array();
         }
@@ -969,6 +985,10 @@ class enrol_openlml_plugin extends enrol_plugin {
      */
     private function is_ignored_teacher($name) {
         global $CFG;
+        if (empty($name)) {
+        	debugging($this->errorlogtag . 'is_ignored_teacher was called with empty userid');
+        	return false;
+        }
         $ignored_teachers = explode(',', $this->config->teachers_ignore);
         if (empty($ignored_teachers)) {
             return false;
@@ -985,6 +1005,12 @@ class enrol_openlml_plugin extends enrol_plugin {
         global $CFG, $DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
+        if (empty($user->username) || empty($user->firstname) || empty($user->lastname)) {
+        	debugging($this->errorlogtag . 
+        			sprintf('teacher_add_category: data missing(userid:%s|firstname:%s|lastname:%s)',
+        					$user->username, $user->firstname, $user->lastname));
+        	return false;
+        }
         if (!isset($this->attic_obj)) {
             $this->attic_obj = $this->get_teacher_attic_category();
         }
@@ -1008,7 +1034,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                 debugging($this->errorlogtag.'Could not create teacher category for teacher ' . $user->username);
                 return false;
             }
-            debugging($this->errorlogtag."created teacher category ".$cat_obj->id." for ".$user-id."(".$user->lastname.",".$user->firstname.")", DEBUG_DEVELOPER);
+            debugging($this->errorlogtag."created teacher category ".$cat_obj->id." for ".$user->id."(".$user->lastname.",".$user->firstname.")", DEBUG_DEVELOPER);
         }
         return $cat_obj;
     }
@@ -1104,8 +1130,8 @@ class enrol_openlml_plugin extends enrol_plugin {
         global $CFG,$DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
-        debugging($this->errorlogtag."create_category... $name ($description) parent($parent),\n"
-            ."          sortorder($sortorder) ".date("H:i:s"), DEBUG_DEVELOPER);
+        debugging($this->errorlogtag . sprintf("create_category... %s (%s),\n                sortorder(%s) %s",
+                 $name, $description, $sortorder, date("H:i:s")), DEBUG_DEVELOPER);
         $data = new stdClass();
         $data->name = $name;
         $data->idnumber = $idnumber;
@@ -1152,11 +1178,34 @@ class enrol_openlml_plugin extends enrol_plugin {
             $authldap->ldapconns++;
             return $authldap->ldapconnection;
         }
-
+        if (isset($authldap->config->bind_dn)) {
+			$binddn = $authldap->config->bind_dn;
+        }
+        else {
+        	$binddn = '';
+        }
+        if (isset($authldap->config->bind_pw)) {
+			$bindpw = $authldap->config->bind_pw;
+        }
+        else {
+        	$bindpw = '';
+        }
+        if (isset($authldap->config->opt_deref)) {
+			$optderef = $authldap->config->opt_deref;
+        }
+        else {
+        	$optderef = false;
+        }
+        if (isset($authldap->config->start_tls)) {
+			$starttls = $authldap->config->start_tls;
+        }
+        else {
+        	$starttls = false;
+        }
         if($ldapconnection = ldap_connect_moodle($authldap->config->host_url, $authldap->config->ldap_version,
-                                                 $authldap->config->user_type, $authldap->config->bind_dn,
-                                                 $authldap->config->bind_pw, $authldap->config->opt_deref,
-                                                 $debuginfo, $authldap->config->start_tls)) {
+                                                 $authldap->config->user_type, $binddn,
+                                                 $bindpw, $optderef,
+                                                 $debuginfo, $starttls)) {
             $authldap->ldapconns = 1;
             $authldap->ldapconnection = $ldapconnection;
             return $ldapconnection;

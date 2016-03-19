@@ -52,7 +52,19 @@ class openlml_sync_task extends \core\task\scheduled_task {
 
         require_once($CFG->dirroot . '/enrol/openlml/lib.php');
 
+        // The enrolment depends on user synchronization via auth_ldap.
+        if (!is_enabled_auth('ldap')) {
+            debugging('[AUTH LDAP] ' . get_string('pluginnotenabled', 'auth_ldap'));
+            return;
+        }
+
+        if (!enrol_is_enabled('cohort')) {
+            debugging('[ENROL COHORT]'.get_string('pluginnotenabled', 'enrol_cohort'));
+            return;
+        }
+
         if (!enrol_is_enabled('openlml')) {
+            debugging('[ENROL OPENLML] '.get_string('pluginnotenabled', 'enrol_openlml'));
             return;
         }
 

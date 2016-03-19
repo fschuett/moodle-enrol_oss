@@ -39,6 +39,8 @@ Activate it and schedule it for hourly execution.
 
 Changelog
 ---------
+2016-03-19 fix several errors
+
 2016-02-07 add scheduled task, remove auth_ldap.patch
 
 2016-01-15 replace collatorlib with core_collator

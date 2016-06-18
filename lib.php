@@ -91,7 +91,7 @@ class enrol_openlml_plugin extends enrol_plugin {
 
 
     /**
-     * Forces synchronisation of user enrolments for all ldap users 
+     * Forces synchronisation of user enrolments for an ldap user
      * with Open LML server.
      * It creates cohorts, removes cohorts and adds/removes course categories.
      *
@@ -109,6 +109,10 @@ class enrol_openlml_plugin extends enrol_plugin {
         
         // Correct the cohort subscriptions.
         $ldap_groups = $this->ldap_get_grouplist($user->username);
+        if(!$ldap_groups){
+            debugging($this->errorlogtag . ' no ldap connection available, sync_user_enrolments aborted.');
+            return TRUE;
+        }
         $cohorts = $this->get_cohortlist($user->username);
         foreach ($ldap_groups as $group => $groupname) {
             if (!isset($cohorts[$groupname])) {
@@ -189,7 +193,8 @@ class enrol_openlml_plugin extends enrol_plugin {
     /**
      * Does synchronisation of user subscription to cohorts and
      * autocreate/autoremove of teacher course categories based on
-     * the settings and the contents of the Open LML server.
+     * the settings and the contents of the Open LML server
+     * for all users.
      * @return boolean
      * @uses DB,CFG
      */
@@ -200,7 +205,10 @@ class enrol_openlml_plugin extends enrol_plugin {
         debugging($this->errorlogtag.'sync_enrolments... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $ldap_groups = $this->ldap_get_grouplist();
-
+        if (!$ldap_groups) {
+            debugging($this->errorlogtag.' ldap connection not available, sync_enrolments aborted.');
+            throw new dml_connection_exception('no ldap connection available - sync_enrolments failed!');
+        }
         foreach ($ldap_groups as $group => $groupname) {
             $cohortid = $this->get_cohort_id($groupname);
             $ldap_members = $this->ldap_get_group_members($groupname, $this->has_teachers_as_members($groupname));
@@ -473,7 +481,10 @@ class enrol_openlml_plugin extends enrol_plugin {
 
     /**
      * return all groups from LDAP which match search criteria defined in settings
+     * on success:
      * @return string[]
+     * on failure:
+     * @return false
      */
     private function ldap_get_grouplist($username = "*") {
         global $CFG, $DB;
@@ -490,7 +501,7 @@ class enrol_openlml_plugin extends enrol_plugin {
             DEBUG_DEVELOPER);
         $fresult = array ();
         if (!$ldapconnection) {
-            return $fresult;
+            return FALSE;
         }
         if ($username !== "*") {
             $filter = '(' . $this->config->member_attribute . '=' . $username . ')';
@@ -557,7 +568,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         debugging($this->errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $ldapconnection = $this->ldap_connect_ul($authldap);
-        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
+        debugging($this->errorlogtag.'ldap_get_groupmembers... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
 
         $group = core_text::convert($group, 'utf-8', $this->config->ldapencoding);

@@ -1,0 +1,6 @@
+- sync users cohort enrolments when logging in
++ less and more informative messages
++ make enrol instances independent from cohort instances
+- include new progress_trace interface to enrol_openlml_sync
+- rename functions to be more object oriented (sync instead of long form)
+- remove obsolete cron function

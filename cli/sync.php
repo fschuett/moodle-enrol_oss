@@ -22,7 +22,7 @@
  *
  * Sample cron entry:
  * # 5 minutes past every full hour
- * 5 * * * * $sudo -u www-data /usr/bin/php /var/www/moodle/enrol/openlml/cli/sync.php
+ * 5 * * * * $sudo -u www-data /usr/bin/php /var/www/moodle/enrol/oss/cli/sync.php
  *
  * Notes:
  *   - it is required to use the web server account when executing PHP CLI scripts
@@ -34,7 +34,7 @@
  *     -d log_errors=1 -d error_reporting=E_ALL -d display_errors=0 -d html_errors=0
  *
  * @package    enrol
- * @subpackage openlml
+ * @subpackage oss
  * @author     Frank Schütte - based on code of ldap enrol and sync_cohorts.php
  * @copyright  2012 Frank Schütte <fschuett@gymnasium-himmelsthuer.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -56,17 +56,17 @@ if ($unrecognized) {
 if ($options['help']) {
     $help =
     "Execute enrol sync with external Open LML server.
-The enrol_openlml plugin must be enabled and properly configured.
+The enrol_oss plugin must be enabled and properly configured.
 
 Options:
 -h, --help            Print out this help
 
 Example:
-\$sudo -u www-data /usr/bin/php enrol/openlml/cli/sync.php
+\$sudo -u www-data /usr/bin/php enrol/oss/cli/sync.php
 
 Sample cron entry:
 # 5 minutes past every full hour
-5 * * * * \$sudo -u www-data /usr/bin/php /var/www/moodle/enrol/openlml/cli/sync.php
+5 * * * * \$sudo -u www-data /usr/bin/php /var/www/moodle/enrol/oss/cli/sync.php
 ";
 
     echo $help;
@@ -83,15 +83,15 @@ if (!is_enabled_auth('ldap')) {
 }
 
 
-if (!enrol_is_enabled('openlml')) {
-    print('[ENROL OPENLML] '.get_string('pluginnotenabled', 'enrol_openlml'));
+if (!enrol_is_enabled('oss')) {
+    print('[ENROL oss] '.get_string('pluginnotenabled', 'enrol_oss'));
     die;
 }
 
 $result = 0;
 
 // Update enrolments.
-$enrol = enrol_get_plugin('openlml');
-$result = $enrol->enrol_openlml_sync();
+$enrol = enrol_get_plugin('oss');
+$result = $enrol->enrol_oss_sync();
 
 exit($result);

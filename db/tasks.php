@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Definition of openlml enrolment scheduled tasks.
+ * Definition of oss enrolment scheduled tasks.
  *
- * @package    enrol_openlml
+ * @package    enrol_oss
  * @copyright  2016 Frank Schütte
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $tasks = array(
     array(
-        'classname' => '\enrol_openlml\task\openlml_sync_task',
+        'classname' => '\enrol_oss\task\oss_sync_task',
         'blocking' => 0,
         'minute' => '51',
         'hour' => '*',

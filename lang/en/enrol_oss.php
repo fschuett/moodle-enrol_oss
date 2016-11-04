@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'enrol_openlml', language 'en'
+ * Strings for component 'enrol_oss', language 'en'
  *
  * @package    enrol
- * @subpackage openlml
+ * @subpackage oss
  * @copyright  Frank Schütte <fschuett@gymnasium-himmelsthuer.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -30,14 +30,14 @@ $string['common_settings'] = 'LDAP settings';
 $string['contexts'] = 'one or more LDAP contexts separated by semicolon(;)';
 $string['contexts_key'] = 'contexts';
 $string['course_description'] = 'course category for teacher ';
-$string['enrolname'] = 'openlml';
+$string['enrolname'] = 'oss';
 $string['member_attribute'] = 'LDAP group member attribute, usually memberuid';
 $string['member_attribute_key'] = 'group attribute';
 $string['object'] = 'LDAP object class, usually posixGroup';
 $string['object_key'] = 'object class';
-$string['openlmlsync'] = 'openlml enrolment sync';
-$string['pluginname_desc'] = '<p>This plugin is supposed to be used with german <strong>Open LML</strong> school server and is tailored to it\'s LDAP structure.</p><p>This plugin enrols users into courses based on the course <strong>idnumber</strong> (note: idnumber is a unique field, so make it unique by prepending course "shortname:")</p>';
-$string['pluginname'] = 'Open LML Enrolment';
+$string['osssync'] = 'oss enrolment sync';
+$string['pluginname_desc'] = '<p>This plugin is supposed to be used with <strong>OSS</strong> open school server and is tailored to it\'s LDAP structure.</p><p>This plugin enrols users into courses based on the course <strong>idnumber</strong> (note: idnumber is a unique field, so make it unique by prepending course "shortname:")</p>';
+$string['pluginname'] = 'OSS Enrolment';
 $string['pluginnotenabled'] = 'Plugin not enabled!';
 $string['prefix_teacher_members'] = 'In courses with this prefix teachers can be enroled as members, comma(,) separated list';
 $string['prefix_teacher_members_key'] = 'teacher course prefix';
@@ -45,12 +45,12 @@ $string['student_class_numbers'] = 'grade numbers, usually 5,6,...,12';
 $string['student_class_numbers_key'] = 'grade numbers';
 $string['student_groups'] = 'additional specific groups separated by colon(,)';
 $string['student_groups_key'] = 'other groups';
-$string['student_project_prefix'] = 'Projects on the Open LML server usually start with a prefix of p_';
+$string['student_project_prefix'] = 'Projects on the OSS server usually start with a prefix of p_';
 $string['student_project_prefix_key'] = 'project prefix';
 $string['student_role'] = 'Default student enrolment role, usually student';
 $string['student_role_key'] = 'student role';
 $string['students_settings'] = 'Students settings';
-$string['sync_description'] = 'Synchronized with Open LML server';
+$string['sync_description'] = 'Synchronized with OSS server';
 $string['teacher_context_desc'] = 'Automatic teacher courses category';
 $string['teachers_category_autocreate'] = 'The course category for a teacher is created automatically';
 $string['teachers_category_autocreate_key'] = 'autocreate';

@@ -18,33 +18,17 @@
  * Database enrolment plugin installation.
  *
  * @package    enrol
- * @subpackage openlml
+ * @subpackage oss
  * @copyright  2012 Frank Schütte <fschuett@gymnasium-himmelsthuer.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-function xmldb_enrol_openlml_install() {
+function xmldb_enrol_oss_install() {
     global $CFG, $DB;
 
     require_once($CFG->libdir . '/accesslib.php');
     
-    // Move coursecreator roles from lml to enrol_openlml.
-    echo "move old coursecreator assignments from lml to enrol_openlml\n";
-    $role = $DB->get_record('role', array('shortname'=>'coursecreator'));
-    if ($role) {
-        if($records = $DB->get_recordset_select('role_assignments', "(roleid='" . $role->id . "' and component='lml')")) {
-            foreach ($records as $record) {
-                $record->component = 'enrol_openlml';
-            }
-            $records->close();
-        }
-    }
-
-    // Remove role assignments lml.
-    echo "remove all remaining lml assignments\n";
-    $DB->delete_records('role_assignments', array('component'=>'lml'));
-
     return true;
 }

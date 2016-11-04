@@ -20,7 +20,7 @@
  * This plugin synchronises enrolment and roles with a Open LML server.
  *
  * @package    enrol
- * @subpackage openlml
+ * @subpackage oss
  * @author     Frank Schütte based on code by Iñaki Arenaza
  * @copyright  1999 onwards Martin Dougiamas {@link http://moodle.com}
  * @copyright  2010 Iñaki Arenaza <iarenaza@eps.mondragon.edu>
@@ -30,9 +30,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-class enrol_openlml_plugin extends enrol_plugin {
-    protected $enroltype = 'enrol_openlml';
-    protected $errorlogtag = '[ENROL OPENLML] ';
+class enrol_oss_plugin extends enrol_plugin {
+    protected $enroltype = 'enrol_oss';
+    protected $errorlogtag = '[ENROL oss] ';
     protected $idnumber_teachers_cat = 'teachercat';
     protected $idnumber_attic_cat = 'atticcat';
     protected $teacher_array=Array();
@@ -82,7 +82,7 @@ class enrol_openlml_plugin extends enrol_plugin {
      * @return bool
      */
     public function instance_deleteable($instance) {
-        if (!enrol_is_enabled('openlml')) {
+        if (!enrol_is_enabled('oss')) {
             return true;
         }
 
@@ -416,7 +416,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         }
     }
 
-    public function enrol_openlml_sync() {
+    public function enrol_oss_sync() {
         $this->sync_enrolments();
     }
 
@@ -438,13 +438,13 @@ class enrol_openlml_plugin extends enrol_plugin {
             die;
         }
 
-        if (!enrol_is_enabled('openlml')) {
-            debugging('[ENROL OPENLML] '.get_string('pluginnotenabled', 'enrol_openlml'));
+        if (!enrol_is_enabled('oss')) {
+            debugging('[ENROL oss] '.get_string('pluginnotenabled', 'enrol_oss'));
             die;
         }
 
-        mtrace("Starting enrolments for openlml enrolments plugin...");
-        $this->enrol_openlml_sync();
+        mtrace("Starting enrolments for oss enrolments plugin...");
+        $this->enrol_oss_sync();
         mtrace("finished.");
     }
 
@@ -654,7 +654,7 @@ class enrol_openlml_plugin extends enrol_plugin {
             DEBUG_DEVELOPER);
         $params = array (
             'idnumber' => $groupname,
-            'component' => 'enrol_openlml',
+            'component' => 'enrol_oss',
             'contextid' => SYSCONTEXTID,
         );
         if (!$cohort = $DB->get_record('cohort', $params, '*', IGNORE_MULTIPLE)) {
@@ -664,8 +664,8 @@ class enrol_openlml_plugin extends enrol_plugin {
             $cohort = new StdClass();
             $cohort->name = $cohort->idnumber = $groupname;
             $cohort->contextid = SYSCONTEXTID;
-            $cohort->component='enrol_openlml';
-            $cohort->description=get_string('sync_description', 'enrol_openlml');
+            $cohort->component='enrol_oss';
+            $cohort->description=get_string('sync_description', 'enrol_oss');
             $cohortid = cohort_add_cohort($cohort);
         } else {
             if ($DB->count_records('cohort', $params) > 1) {
@@ -685,7 +685,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                     FROM {cohort} c
                     JOIN {cohort_members} cm ON cm.cohortid = c.id
                     JOIN {user} u ON cm.userid = u.id
-                            WHERE (c.component = 'enrol_openlml' 
+                            WHERE (c.component = 'enrol_oss' 
                                     AND u.username = :userid 
                                     AND u.auth = 'ldap'
                                     AND c.contextid = ".SYSCONTEXTID.")";
@@ -694,7 +694,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         } else {
             $sql = " SELECT DISTINCT c.id, c.idnumber, c.name
                     FROM {cohort} c
-                            WHERE c.component = 'enrol_openlml'
+                            WHERE c.component = 'enrol_oss'
                             AND c.contextid = ".SYSCONTEXTID;
             $records = $DB->get_records_sql($sql);
         }
@@ -708,7 +708,7 @@ class enrol_openlml_plugin extends enrol_plugin {
     /**
      * return a two dimensional array with $courseid as first and
      * $cohortname as second index
-     * content are cohort enrol instances created by enrol_openlml
+     * content are cohort enrol instances created by enrol_oss
      * @return array of array
      */
     private function get_cohortinstancelist() {
@@ -716,14 +716,14 @@ class enrol_openlml_plugin extends enrol_plugin {
         $ret = array();
         // fill $cohortname: id => idnumber
         $sql = "SELECT DISTINCT c.id,c.idnumber
-                FROM {cohort} c WHERE c.component = 'enrol_openlml'
+                FROM {cohort} c WHERE c.component = 'enrol_oss'
                 AND c.contextid=".SYSCONTEXTID;
         $records = $DB->get_records_sql($sql);
         $cohortname = array();
         foreach($records as $record) {
             $cohortname[$record->id] = $record->idnumber;
         }
-        // get cohort enrol instances created from enrol_openlml
+        // get cohort enrol instances created from enrol_oss
         $sql = " SELECT e.id,e.enrol,e.courseid,e.customint1,e.customchar1
                 FROM {enrol} e
                         WHERE e.enrol='cohort' AND e.customchar1='".$this->enroltype."'";
@@ -740,7 +740,7 @@ class enrol_openlml_plugin extends enrol_plugin {
 
     /**
      * return an array of cohort instances used in the course with the
-     * given course id and created by enrol_openlml
+     * given course id and created by enrol_oss
      * @return array
      */
     private function get_coursecohortlist($courseid) {
@@ -874,7 +874,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         $cat_obj = $DB->get_record( 'course_categories', array('idnumber'=>$this->idnumber_teachers_cat, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$cat_obj) { // Category doesn't exist.
             $cat_obj = $this->create_category($this->config->teachers_course_context,$this->idnumber_teachers_cat,
-                    get_string('teacher_context_desc', 'enrol_openlml'));
+                    get_string('teacher_context_desc', 'enrol_oss'));
             debugging($this->errorlogtag."created teachers course category ".$cat_obj->id, DEBUG_DEVELOPER);
             if (!$cat_obj) {
                 debugging($this->errorlogtag . 'autocreate/autoremove could not create teacher course context');
@@ -893,7 +893,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         $this->attic_obj = $DB->get_record( 'course_categories', array('idnumber'=>$this->idnumber_attic_cat, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$this->attic_obj) { // Category for removed teachers doesn't exist.
             $this->attic_obj = $this->create_category($this->config->teachers_removed, $this->idnumber_attic_cat,
-                    get_string('attic_description', 'enrol_openlml'),0,99999,0);
+                    get_string('attic_description', 'enrol_oss'),0,99999,0);
             debugging($this->errorlogtag."created attic course category ".$cat_obj->id, DEBUG_DEVELOPER);
             if (!$this->attic_obj) {
                 debugging($this->errorlogtag .'autocreate/autoremove could not create removed teachers context');
@@ -1037,7 +1037,7 @@ class enrol_openlml_plugin extends enrol_plugin {
                 debugging($this->errorlogtag."moved teacher category ".$cat_obj->id." to teachers category", DEBUG_DEVELOPER);
             }
         } else {
-            $description = get_string('course_description', 'enrol_openlml') . ' ' .
+            $description = get_string('course_description', 'enrol_oss') . ' ' .
                     $user->firstname . ' ' .$user->lastname . '(' . $user->username . ').';
             $cat_obj = $this->create_category($user->lastname.",".$user->firstname, $user->username,
                     $description, $this->teacher_obj->id);
@@ -1071,7 +1071,7 @@ class enrol_openlml_plugin extends enrol_plugin {
         // Tests for teachers role.
         $teacherscontext = context_coursecat::instance($cat->id);
         return $DB->record_exists('role_assignments', array('roleid'=>$this->config->teachers_course_role,
-                        'contextid'=>$teacherscontext->id, 'userid'=>$user->id, 'component'=>'enrol_openlml'));
+                        'contextid'=>$teacherscontext->id, 'userid'=>$user->id, 'component'=>'enrol_oss'));
     }
 
     /**
@@ -1093,7 +1093,7 @@ class enrol_openlml_plugin extends enrol_plugin {
 
         // Set teachers role to configured teachers course role.
         $teacherscontext = context_coursecat::instance($cat->id);
-        if (!role_assign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_openlml')) {
+        if (!role_assign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_oss')) {
             debugging($this->errorlogtag . 'could not assign role (' . $this->config->teachers_course_role . ') to user (' .
                     $user->username . ') in context (' . $teacherscontext->id . ').');
             return false;
@@ -1122,7 +1122,7 @@ class enrol_openlml_plugin extends enrol_plugin {
 
         // Removes teachers configured course role.
         $teacherscontext = context_coursecat::instance($cat->id);
-        role_unassign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_openlml');
+        role_unassign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_oss');
         debugging($this->errorlogtag."unassign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
         return true;
     }

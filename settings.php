@@ -18,7 +18,7 @@
  * OML enrolment plugin settings and presets.
  *
  * @package    enrol
- * @subpackage openlml
+ * @subpackage oss
  * @author     Frank Schütte
  * @copyright  2012 Frank Schütte <fschuett@gymnasium-himmelsthuer.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -33,84 +33,84 @@ if ($ADMIN->fulltree) {
     $yesno = array(get_string('no'), get_string('yes'));
 
     // Heading.
-    $settings->add(new admin_setting_heading('enrol_openlml_settings', '',
-            get_string('pluginname_desc', 'enrol_openlml')));
+    $settings->add(new admin_setting_heading('enrol_oss_settings', '',
+            get_string('pluginname_desc', 'enrol_oss')));
 
     // Common settings.
-    $settings->add(new admin_setting_heading('enrol_openlml_common_settings',
-            get_string('common_settings', 'enrol_openlml'), ''));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/contexts',
-            get_string('contexts_key', 'enrol_openlml'),
-            get_string('contexts', 'enrol_openlml'), 'ou=groups,dc=linuxmuster,dc=lokal'));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/object',
-            get_string('object_key', 'enrol_openlml'), get_string('object', 'enrol_openlml'), 'posixGroup'));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/attribute',
-            get_string('attribute_key', 'enrol_openlml'), get_string('attribute', 'enrol_openlml'), 'cn'));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/member_attribute',
-            get_string('member_attribute_key', 'enrol_openlml'), get_string('member_attribute', 'enrol_openlml'), 'memberuid'));
+    $settings->add(new admin_setting_heading('enrol_oss_common_settings',
+            get_string('common_settings', 'enrol_oss'), ''));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/contexts',
+            get_string('contexts_key', 'enrol_oss'),
+            get_string('contexts', 'enrol_oss'), 'ou=groups,dc=linuxmuster,dc=lokal'));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/object',
+            get_string('object_key', 'enrol_oss'), get_string('object', 'enrol_oss'), 'posixGroup'));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/attribute',
+            get_string('attribute_key', 'enrol_oss'), get_string('attribute', 'enrol_oss'), 'cn'));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/member_attribute',
+            get_string('member_attribute_key', 'enrol_oss'), get_string('member_attribute', 'enrol_oss'), 'memberuid'));
 
     // Teachers settings.
-    $settings->add(new admin_setting_heading('enrol_openlml_teacher_settings',
-            get_string('teacher_settings', 'enrol_openlml'), ''));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/teachers_group_name',
-            get_string('teachers_group_name_key', 'enrol_openlml'),
-            get_string('teachers_group_name', 'enrol_openlml'), 'teachers'));
+    $settings->add(new admin_setting_heading('enrol_oss_teacher_settings',
+            get_string('teacher_settings', 'enrol_oss'), ''));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/teachers_group_name',
+            get_string('teachers_group_name_key', 'enrol_oss'),
+            get_string('teachers_group_name', 'enrol_oss'), 'teachers'));
     if (!during_initial_install()) {
         $options = get_default_enrol_roles(context_system::instance());
         $student = get_archetype_roles('student');
         $student = reset($student);
-        $settings->add(new admin_setting_configselect('enrol_openlml/teachers_role',
-            get_string('teachers_role_key', 'enrol_openlml'),
-            get_string('teachers_role', 'enrol_openlml'), $student->id, $options));
+        $settings->add(new admin_setting_configselect('enrol_oss/teachers_role',
+            get_string('teachers_role_key', 'enrol_oss'),
+            get_string('teachers_role', 'enrol_oss'), $student->id, $options));
     }
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/prefix_teacher_members',
-            get_string('prefix_teacher_members_key', 'enrol_openlml'),
-            get_string('prefix_teacher_members', 'enrol_openlml'), 'p_teachers_'));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/prefix_teacher_members',
+            get_string('prefix_teacher_members_key', 'enrol_oss'),
+            get_string('prefix_teacher_members', 'enrol_oss'), 'p_teachers_'));
 
     // Teachers context settings.
-    $settings->add(new admin_setting_heading('enrol_openlml_teachers_context_settings',
-            get_string('teachers_context_settings', 'enrol_openlml'), ''));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/teachers_course_context',
-            get_string('teachers_course_context_key', 'enrol_openlml'),
-            get_string('teachers_course_context', 'enrol_openlml'), 'Lehrer'));
+    $settings->add(new admin_setting_heading('enrol_oss_teachers_context_settings',
+            get_string('teachers_context_settings', 'enrol_oss'), ''));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/teachers_course_context',
+            get_string('teachers_course_context_key', 'enrol_oss'),
+            get_string('teachers_course_context', 'enrol_oss'), 'Lehrer'));
     if (!during_initial_install()) {
         $options = get_assignable_roles(context_system::instance());
         $coursecreator = get_archetype_roles('coursecreator');
         $coursecreator = reset($coursecreator);
-        $settings->add(new admin_setting_configselect('enrol_openlml/teachers_course_role',
-            get_string('teachers_course_role_key', 'enrol_openlml'),
-            get_string('teachers_course_role', 'enrol_openlml'), $coursecreator->id, $options));
+        $settings->add(new admin_setting_configselect('enrol_oss/teachers_course_role',
+            get_string('teachers_course_role_key', 'enrol_oss'),
+            get_string('teachers_course_role', 'enrol_oss'), $coursecreator->id, $options));
     }
     $options = $yesno;
-    $settings->add(new admin_setting_configselect('enrol_openlml/teachers_category_autocreate',
-            get_string('teachers_category_autocreate_key', 'enrol_openlml'),
-            get_string('teachers_category_autocreate', 'enrol_openlml'), 0, $options));
+    $settings->add(new admin_setting_configselect('enrol_oss/teachers_category_autocreate',
+            get_string('teachers_category_autocreate_key', 'enrol_oss'),
+            get_string('teachers_category_autocreate', 'enrol_oss'), 0, $options));
     $options = $yesno;
-    $settings->add(new admin_setting_configselect('enrol_openlml/teachers_category_autoremove',
-            get_string('teachers_category_autoremove_key', 'enrol_openlml'),
-            get_string('teachers_category_autoremove', 'enrol_openlml'), 0, $options));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/teachers_removed',
-            get_string('teachers_removed_key', 'enrol_openlml'), get_string('teachers_removed', 'enrol_openlml'), 'attic'));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/teachers_ignore',
-            get_string('teachers_ignore_key', 'enrol_openlml'), get_string('teachers_ignore', 'enrol_openlml'), 'administrator'));
+    $settings->add(new admin_setting_configselect('enrol_oss/teachers_category_autoremove',
+            get_string('teachers_category_autoremove_key', 'enrol_oss'),
+            get_string('teachers_category_autoremove', 'enrol_oss'), 0, $options));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/teachers_removed',
+            get_string('teachers_removed_key', 'enrol_oss'), get_string('teachers_removed', 'enrol_oss'), 'attic'));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/teachers_ignore',
+            get_string('teachers_ignore_key', 'enrol_oss'), get_string('teachers_ignore', 'enrol_oss'), 'administrator'));
 
     // Students settings.
-    $settings->add(new admin_setting_heading('enrol_openlml_students_settings',
-            get_string('students_settings', 'enrol_openlml'), ''));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/student_class_numbers',
-            get_string('student_class_numbers_key', 'enrol_openlml'),
-            get_string('student_class_numbers', 'enrol_openlml'), '5,6,7,8,9,10,11,12,extra'));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/student_groups',
-            get_string('student_groups_key', 'enrol_openlml'), get_string('student_groups', 'enrol_openlml'), ''));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_openlml/student_project_prefix',
-            get_string('student_project_prefix_key', 'enrol_openlml'),
-            get_string('student_project_prefix', 'enrol_openlml'), 'p_'));
+    $settings->add(new admin_setting_heading('enrol_oss_students_settings',
+            get_string('students_settings', 'enrol_oss'), ''));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/student_class_numbers',
+            get_string('student_class_numbers_key', 'enrol_oss'),
+            get_string('student_class_numbers', 'enrol_oss'), '5,6,7,8,9,10,11,12,extra'));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/student_groups',
+            get_string('student_groups_key', 'enrol_oss'), get_string('student_groups', 'enrol_oss'), ''));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/student_project_prefix',
+            get_string('student_project_prefix_key', 'enrol_oss'),
+            get_string('student_project_prefix', 'enrol_oss'), 'p_'));
     if (!during_initial_install()) {
         $options = get_default_enrol_roles(context_system::instance());
         $student = get_archetype_roles('student');
         $student = reset($student);
-        $settings->add(new admin_setting_configselect('enrol_openlml/student_role',
-            get_string('student_role_key', 'enrol_openlml'),
-            get_string('student_role', 'enrol_openlml'), $student->id, $options));
+        $settings->add(new admin_setting_configselect('enrol_oss/student_role',
+            get_string('student_role_key', 'enrol_oss'),
+            get_string('student_role', 'enrol_oss'), $student->id, $options));
     }
 }

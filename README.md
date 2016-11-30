@@ -1,12 +1,12 @@
 moodle-enrol_oss
-================
+====================
 
 enrolment plugin for moodle from 3.x to autoenrol in
 conjunction with the open school server enrol_oss.
 
 It is supposed to work with the
 
-open school server provided by Extis Company
+Open School Server (www.openschoolserver.net)
 
 servers.
 
@@ -33,7 +33,8 @@ Activate it and schedule it for hourly execution.
 
 Changelog
 ---------
-2016-11-04 forked from enrol_openlml
+2016-11-30 added option member_attribute_isdn for dn handling
+2016-11-30 initial port from enrol_openlml
 
 Hildesheim, Germany
 Frank Schütte,2016(fschuett@gymhim.de)

@@ -16,14 +16,14 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Open LML enrolment plugin implementation.
+ * OSS enrolment plugin implementation.
  *
  * This file keeps track of upgrades to the oss enrol plugin
  *
  * @package    enrol
  * @subpackage oss
  * @author     Frank Schütte
- * @copyright  2012 Frank Schütte <fschuett@gymnasium-himmelsthuer.de>
+ * @copyright  2012 Frank Schütte <fschuett@gymhim.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

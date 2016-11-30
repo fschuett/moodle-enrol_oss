@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * CLI sync for full OpenLML synchronisation.
+ * CLI sync for full OSS synchronisation.
  *
- * This script is meant to be called from a cronjob to sync moodle with the Open LML
+ * This script is meant to be called from a cronjob to sync moodle with the OSS
  * server to pickup groups as moodle global groups (cohorts).
  *
  * Sample cron entry:
@@ -55,7 +55,7 @@ if ($unrecognized) {
 
 if ($options['help']) {
     $help =
-    "Execute enrol sync with external Open LML server.
+    "Execute enrol sync with external OSS server.
 The enrol_oss plugin must be enabled and properly configured.
 
 Options:
@@ -84,7 +84,7 @@ if (!is_enabled_auth('ldap')) {
 
 
 if (!enrol_is_enabled('oss')) {
-    print('[ENROL oss] '.get_string('pluginnotenabled', 'enrol_oss'));
+    print('[ENROL OSS] '.get_string('pluginnotenabled', 'enrol_oss'));
     die;
 }
 

@@ -30,5 +30,21 @@ function xmldb_enrol_oss_install() {
 
     require_once($CFG->libdir . '/accesslib.php');
     
+    // Move coursecreator roles from oss to enrol_oss.
+    echo "move old coursecreator assignments from oss to enrol_oss\n";
+    $role = $DB->get_record('role', array('shortname'=>'coursecreator'));
+    if ($role) {
+        if($records = $DB->get_recordset_select('role_assignments', "(roleid='" . $role->id . "' and component='oss')")) {
+            foreach ($records as $record) {
+                $record->component = 'enrol_oss';
+            }
+            $records->close();
+        }
+    }
+
+    // Remove role assignments oss.
+    echo "remove all remaining oss assignments\n";
+    $DB->delete_records('role_assignments', array('component'=>'oss'));
+
     return true;
 }

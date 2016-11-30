@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * OpenML enrolment plugin version specification.
+ * OSS enrolment plugin version specification.
  *
  * @package    enrol
  * @subpackage oss
@@ -26,9 +26,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2016110401;        // The current plugin version (Date: YYYYMMDDXX).
+$plugin->version   = 2016113002;        // The current plugin version (Date: YYYYMMDDXX).
 $plugin->requires  = 2015051100;        //  Requires Moodle version 2.9
 $plugin->component = 'enrol_oss';   // Full name of the plugin (used for diagnostics).
 $plugin->maturity  = MATURITY_BETA;     // Beta, nees testing.
-$plugin->release   = '0.1 (Build: 2016110401)';
+$plugin->release   = '1.1 (Build: 2016113002)';
 $plugin->dependencies = array('auth_ldap'=>ANY_VERSION, 'enrol_cohort'=>ANY_VERSION);

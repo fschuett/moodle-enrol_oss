@@ -15,24 +15,25 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Open LML enrolment plugin implementation.
+ * OSS enrolment plugin implementation.
  *
- * This plugin synchronises enrolment and roles with a Open LML server.
+ * This plugin synchronises enrolment and roles with a Open OSS server.
  *
  * @package    enrol
  * @subpackage oss
  * @author     Frank Schütte based on code by Iñaki Arenaza
  * @copyright  1999 onwards Martin Dougiamas {@link http://moodle.com}
  * @copyright  2010 Iñaki Arenaza <iarenaza@eps.mondragon.edu>
- * @copyright  2013 Frank Schütte <fschuett@gymnasium-himmelsthuer.de>
+ * @copyright  2013 Frank Schütte <fschuett@gymhim.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+//function kill( $data ){ die( var_dump( $data ) ); }
 
 defined('MOODLE_INTERNAL') || die();
 
 class enrol_oss_plugin extends enrol_plugin {
     protected $enroltype = 'enrol_oss';
-    protected $errorlogtag = '[ENROL oss] ';
+    protected $errorlogtag = '[ENROL OSS] ';
     protected $idnumber_teachers_cat = 'teachercat';
     protected $idnumber_attic_cat = 'atticcat';
     protected $teacher_array=Array();
@@ -92,7 +93,7 @@ class enrol_oss_plugin extends enrol_plugin {
 
     /**
      * Forces synchronisation of user enrolments for an ldap user
-     * with Open LML server.
+     * with OSS server.
      * It creates cohorts, removes cohorts and adds/removes course categories.
      *
      * @uses DB,CFG
@@ -193,7 +194,7 @@ class enrol_oss_plugin extends enrol_plugin {
     /**
      * Does synchronisation of user subscription to cohorts and
      * autocreate/autoremove of teacher course categories based on
-     * the settings and the contents of the Open LML server
+     * the settings and the contents of the OSS server
      * for all users.
      * @return boolean
      * @uses DB,CFG
@@ -439,7 +440,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
 
         if (!enrol_is_enabled('oss')) {
-            debugging('[ENROL oss] '.get_string('pluginnotenabled', 'enrol_oss'));
+            debugging('[ENROL OSS] '.get_string('pluginnotenabled', 'enrol_oss'));
             die;
         }
 
@@ -552,8 +553,8 @@ class enrol_oss_plugin extends enrol_plugin {
     }
 
     /**
-     * search for group members on a Open LML server with defined search criteria
-     * @return string[] array of usernames
+     * search for group members on a OSS server with defined search criteria
+     * @return string[] array of usernames or dns
      */
     private function ldap_get_group_members($group, $teachers_ok = false) {
         global $CFG, $DB;
@@ -605,6 +606,9 @@ class enrol_oss_plugin extends enrol_plugin {
                             date("H:i:s")), DEBUG_DEVELOPER);
                     for ($g = 0; $g < (count($entries[0][$this->config->member_attribute]) - 1); $g++) {
                         $member = trim($entries[0][$this->config->member_attribute][$g]);
+                        if ($this->member_attribute_isdn) {
+                    	    $member = $this->userid_from_dn($member);
+                    	}
                         if ($member != "" AND ($teachers_ok OR !$this->is_teacher($member))) {
                             $members[] = $member;
                         }
@@ -1162,6 +1166,17 @@ class enrol_oss_plugin extends enrol_plugin {
             fix_course_sortorder();
         }
         return $cat;
+    }
+
+    private function userid_from_dn($dn = '') {
+	if ($dn == '') {
+		return '';
+	}
+	if (preg_match("/^uid=([^,]+),/", $dn, $matches)) {
+		return $matches[1];
+	} else {
+		return '';
+	}
     }
 
     public function test_sync_user_enrolments($userid) {

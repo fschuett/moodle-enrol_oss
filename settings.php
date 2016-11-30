@@ -20,7 +20,7 @@
  * @package    enrol
  * @subpackage oss
  * @author     Frank Schütte
- * @copyright  2012 Frank Schütte <fschuett@gymnasium-himmelsthuer.de>
+ * @copyright  2012 Frank Schütte <fschuett@gymhim.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -41,13 +41,17 @@ if ($ADMIN->fulltree) {
             get_string('common_settings', 'enrol_oss'), ''));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/contexts',
             get_string('contexts_key', 'enrol_oss'),
-            get_string('contexts', 'enrol_oss'), 'ou=groups,dc=linuxmuster,dc=lokal'));
+            get_string('contexts', 'enrol_oss'), 'ou=group,dc=oss,dc=lokal'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/object',
             get_string('object_key', 'enrol_oss'), get_string('object', 'enrol_oss'), 'posixGroup'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/attribute',
             get_string('attribute_key', 'enrol_oss'), get_string('attribute', 'enrol_oss'), 'cn'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/member_attribute',
-            get_string('member_attribute_key', 'enrol_oss'), get_string('member_attribute', 'enrol_oss'), 'memberuid'));
+            get_string('member_attribute_key', 'enrol_oss'), get_string('member_attribute', 'enrol_oss'), 'member'));
+    $options = $yesno;
+    $settings->add(new admin_setting_configselect('enrol_oss/member_attribute_isdn',
+            get_string('member_attribute_isdn_key', 'enrol_oss'),
+            get_string('member_attribute_isdn', 'enrol_oss'), 0, $options));
 
     // Teachers settings.
     $settings->add(new admin_setting_heading('enrol_oss_teacher_settings',

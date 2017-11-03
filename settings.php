@@ -41,9 +41,9 @@ if ($ADMIN->fulltree) {
             get_string('common_settings', 'enrol_oss'), ''));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/contexts',
             get_string('contexts_key', 'enrol_oss'),
-            get_string('contexts', 'enrol_oss'), 'ou=group,dc=oss,dc=lokal'));
+            get_string('contexts', 'enrol_oss'), 'ou=group,dc=oss,dc=local'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/object',
-            get_string('object_key', 'enrol_oss'), get_string('object', 'enrol_oss'), 'posixGroup'));
+            get_string('object_key', 'enrol_oss'), get_string('object', 'enrol_oss'), 'SchoolGroup'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/attribute',
             get_string('attribute_key', 'enrol_oss'), get_string('attribute', 'enrol_oss'), 'cn'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/member_attribute',
@@ -58,7 +58,7 @@ if ($ADMIN->fulltree) {
             get_string('teacher_settings', 'enrol_oss'), ''));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/teachers_group_name',
             get_string('teachers_group_name_key', 'enrol_oss'),
-            get_string('teachers_group_name', 'enrol_oss'), 'teachers'));
+            get_string('teachers_group_name', 'enrol_oss'), 'TEACHERS'));
     if (!during_initial_install()) {
         $options = get_default_enrol_roles(context_system::instance());
         $student = get_archetype_roles('student');
@@ -69,7 +69,7 @@ if ($ADMIN->fulltree) {
     }
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/prefix_teacher_members',
             get_string('prefix_teacher_members_key', 'enrol_oss'),
-            get_string('prefix_teacher_members', 'enrol_oss'), 'p_teachers_'));
+            get_string('prefix_teacher_members', 'enrol_oss'), 'P_TEACHERS_'));
 
     // Teachers context settings.
     $settings->add(new admin_setting_heading('enrol_oss_teachers_context_settings',
@@ -103,12 +103,12 @@ if ($ADMIN->fulltree) {
             get_string('students_settings', 'enrol_oss'), ''));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/student_class_numbers',
             get_string('student_class_numbers_key', 'enrol_oss'),
-            get_string('student_class_numbers', 'enrol_oss'), '5,6,7,8,9,10,11,12,extra'));
+            get_string('student_class_numbers', 'enrol_oss'), '05,06,07,08,09,10,11,12,EXTRA'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/student_groups',
             get_string('student_groups_key', 'enrol_oss'), get_string('student_groups', 'enrol_oss'), ''));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/student_project_prefix',
             get_string('student_project_prefix_key', 'enrol_oss'),
-            get_string('student_project_prefix', 'enrol_oss'), 'p_'));
+            get_string('student_project_prefix', 'enrol_oss'), 'P_'));
     if (!during_initial_install()) {
         $options = get_default_enrol_roles(context_system::instance());
         $student = get_archetype_roles('student');

@@ -27,7 +27,7 @@
  * @copyright  2013 Frank Schütte <fschuett@gymhim.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-//function kill( $data ){ die( var_dump( $data ) ); }
+#function kill( $data ){ die( var_dump( $data ) ); }
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -168,9 +168,10 @@ class enrol_oss_plugin extends enrol_plugin {
                 $cat = $DB->get_record('course_categories', array('idnumber'=>$user->username,
                         'parent'=> $this->teacher_obj->id),'*',IGNORE_MULTIPLE);
                 if (!$cat) {
+            	    debugging($this->errorlogtag . 'about to add teacher category for ' . $user->username."\n");
                     $cat = $this->teacher_add_category($user);
                     if (!$cat) {
-                        debugging($this->errorlogtag . 'autocreate teacher category failed: ' . $user->username);
+                        debugging($this->errorlogtag . 'autocreate teacher category failed: ' . $user->username."\n");
                     } else {
                         $edited = true;
                     }
@@ -606,7 +607,7 @@ class enrol_oss_plugin extends enrol_plugin {
                             date("H:i:s")), DEBUG_DEVELOPER);
                     for ($g = 0; $g < (count($entries[0][$this->config->member_attribute]) - 1); $g++) {
                         $member = trim($entries[0][$this->config->member_attribute][$g]);
-                        if ($this->member_attribute_isdn) {
+                        if ($this->config->member_attribute_isdn) {
                     	    $member = $this->userid_from_dn($member);
                     	}
                         if ($member != "" AND ($teachers_ok OR !$this->is_teacher($member))) {
@@ -926,7 +927,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         
         $deletable = true;
-        if (!$teachercat = coursecat::get($teacher->id)) {
+        if (!$teachercat = coursecat::get($teacher->id, MUST_EXIST, true)) { //alwaysreturnhidden
             debugging($this->errorlotag . "delete_move_teacher_to_attic could not get category $teacher.");
             return false;
         }
@@ -966,7 +967,7 @@ class enrol_oss_plugin extends enrol_plugin {
         global $CFG,$DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
-        $teacher_cat = coursecat::get($id);
+        $teacher_cat = coursecat::get($id, MUST_EXIST, true); //alwaysreturnhidden
         if (empty($teacher_cat)) {
             debugging('Could not get teachers course category.');
             return false;
@@ -1035,11 +1036,9 @@ class enrol_oss_plugin extends enrol_plugin {
         $cat_obj = $DB->get_record('course_categories', array('idnumber'=>$user->username, 'parent' => $this->attic_obj->id),
                 '*',IGNORE_MULTIPLE);
         if ($cat_obj) {
-            $coursecat = coursecat::get($cat_obj->id);
-            if ($coursecat->can_change_parent($this->teacher_obj->id)) {
-                $coursecat->change_parent($this->teacher_obj->id);
-                debugging($this->errorlogtag."moved teacher category ".$cat_obj->id." to teachers category", DEBUG_DEVELOPER);
-            }
+            $coursecat = coursecat::get($cat_obj->id, MUST_EXIST, true);//alwaysreturnhidden
+            $coursecat->change_parent($this->teacher_obj->id);
+            debugging($this->errorlogtag."moved teacher category ".$cat_obj->id." to teachers category", DEBUG_DEVELOPER);
         } else {
             $description = get_string('course_description', 'enrol_oss') . ' ' .
                     $user->firstname . ' ' .$user->lastname . '(' . $user->username . ').';

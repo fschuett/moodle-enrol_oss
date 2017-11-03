@@ -35,7 +35,7 @@
  *
  * @package    enrol
  * @subpackage oss
- * @author     Frank Schütte - based on code of ldap enrol and sync_cohorts.php
+ * @author     Frank Schütte - test script
  * @copyright  2012 Frank Schütte <fschuett@gymnasium-himmelsthuer.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -92,6 +92,7 @@ $result = 0;
 
 // Update enrolments.
 $enrol = enrol_get_plugin('oss');
-$result = $enrol->enrol_oss_sync();
+// Hier den zu testenden Befehl eintragen:
+//$result = $enrol->init_teacher_array();
 
 exit($result);

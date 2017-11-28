@@ -33,6 +33,7 @@ Activate it and schedule it for hourly execution.
 
 Changelog
 ---------
+2017-11-28 add classes creation/removing and enrolment
 2017-08-19 fixed dn handling, coursecat movements
 2016-11-30 added option member_attribute_isdn for dn handling
 2016-11-30 initial port from enrol_openlml

@@ -27,9 +27,9 @@
  * @copyright  2013 Frank Schütte <fschuett@gymhim.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-//ini_set('display_errors',1);
-//ini_set('display_startup_errors',1);
-//function kill( $data ) { die( var_dump( $data ) ); }
+ini_set('display_errors',1);
+ini_set('display_startup_errors',1);
+function kill( $data ) { die( var_dump( $data ) ); }
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -954,13 +954,15 @@ class enrol_oss_plugin extends enrol_plugin {
 				'idnumber' => $this->idnumber_class_cat,
 				'parent' => 0
 		), 'id', IGNORE_MULTIPLE );
-		if (! $cat_obj && $this->config->class_category_autocreate) {
-			$cat_obj = $this->create_category ( $this->config->class_category, $this->idnumber_class_cat, get_string ( 'class_category_description', 'enrol_oss' ) );
-			if ($cat_obj) {
-				debugging ( $this->errorlogtag . "created class course category " . $cat_obj->id, DEBUG_DEVELOPER );
-				context_coursecat::instance ( 0 )->mark_dirty ();
-			} else {
-				debugging ( $this->errorlogtag . 'autocreate/autoremove could not create class course context' );
+		if ( ! $cat_obj ) {
+			if ( $this->config->class_category_autocreate ) {
+				$cat_obj = $this->create_category ( $this->config->class_category, $this->idnumber_class_cat, get_string ( 'class_category_description', 'enrol_oss' ) );
+				if ($cat_obj) {
+					debugging ( $this->errorlogtag . "created class course category " . $cat_obj->id, DEBUG_DEVELOPER );
+					context_coursecat::instance ( 0 )->mark_dirty ();
+				} else {
+					debugging ( $this->errorlogtag . 'autocreate/autoremove could not create class course context' );
+				}
 			}
 		} else {
 			$cat_obj = coursecat::get($cat_obj->id);
@@ -1101,7 +1103,11 @@ class enrol_oss_plugin extends enrol_plugin {
 			$data->fullname = get_string("class_localname","enrol_oss") . " " . $class;
 			$data->visible = 1;
 			$data->category = $catid;
-			$courseid = create_course($data);
+			try {
+				$courseid = create_course($data);
+			} catch ( Exception $e ) {
+				debugging($this->errorlogtag . "create_class ($class) fehlgeschlagen: ".$e->getMessage()."\n");
+			}
 		} else {
 			$course = duplicate_course($template, $class, $class, $catid, 1);
 		}
@@ -1173,7 +1179,7 @@ class enrol_oss_plugin extends enrol_plugin {
 		foreach($to_unenrol as $class) {
 			$this->class_unenrol($user, $mdl_classes[$class]->id);
 		}
-		if ($this->config->class_groups_enabled) {
+		if ($this->config->groups_enabled) {
 			$this->sync_user_groups($userid);
 		}
 	}
@@ -1198,6 +1204,7 @@ class enrol_oss_plugin extends enrol_plugin {
 			return;
 		}
 		$mdl_classes = $this->get_classes_moodle();
+		var_dump($mdl_classes);
 		foreach($mdl_classes as $class => $course) {
 			$ldap_members = $this->ldap_get_group_members($class, true);
 			$context = context_course::instance($course->id);
@@ -1244,7 +1251,7 @@ class enrol_oss_plugin extends enrol_plugin {
 			if (!empty($to_unenrol)) {
 				$this->class_unenrol($course, $enrol_instance, $to_unenrol);
 			}
-			if ($this->config->class_groups_enabled) {
+			if ($this->config->groups_enabled) {
 				$this->sync_class_groups($course->id);
 			}
 		}
@@ -1314,16 +1321,28 @@ class enrol_oss_plugin extends enrol_plugin {
 	private function sync_class_groups($courseid) {
 	    global $CFG;
 	    require_once $CFG->libdir . '/enrollib.php';
+	    debugging($this->errorlogtag." sync_class_groups($courseid) started...\n", DEBUG_DEVELOPER);
 	    $context = context_course::instance($courseid);
 	    $users = get_enrolled_users($context);
-	    $teachers = get_enrolled_users($context, '', $this->get_group($courseid, 'teachers'));
-	    $students = get_enrolled_users($context, '', $this->get_group($courseid, 'students'));
-	    $parents = get_enrolled_users($context, '', $this->get_group($courseid, 'parents'));
+	    $teachers = array();
+	    $students = array();
+	    $parents = array();
+	    if ( $group = $this->get_group($courseid, 'teachers') ) {
+		$teachers = get_enrolled_users($context, '', $group->id);
+	    }
+	    if ( $group = $this->get_group($courseid, 'students') ) {
+		$students = get_enrolled_users($context, '', $group->id);
+	    }
+	    if ( $group = $this->get_group($courseid, 'parents') ) {
+		$parents = get_enrolled_users($context, '', $group->id);
+	    }
 	    $users = array_diff_key($users, $teachers, $students, $parents);
-        foreach($users as $userid => $user) {
-            $groupid = $this->get_groupid($userid);
-            $this->class_group_add_member($courseid, $groupid, $userid);
-        }
+	    var_dump(array_keys($users));
+    	    foreach($users as $userid => $user) {
+        	$groupid = $this->get_groupid($userid);
+        	$this->class_group_add_member($courseid, $groupid, $userid);
+    	    }
+    	    debugging($this->errorlogtag." sync_class_groups($courseid) ended.\n", DEBUG_DEVELOPER);
 	}
 
 	/*
@@ -1335,40 +1354,57 @@ class enrol_oss_plugin extends enrol_plugin {
 	 *
 	 */
 	private function get_groupid($userid) {
-	    require_once $CFG->libdir .'/classes/user.php';
-	   if( $this->is_teacher($userid) ) {
-	       return 'teachers';
-	   }
-	   $user = get_user($userid);
-	   if( $user->auth == 'ldap') {
-	       return 'students';
-	   }
-	   return 'parents';
+	    global $DB;
+	    if ( is_numeric($userid) ) {
+		$username = $DB->get_field('user', 'username', array('id'=>$userid), MUST_EXIST);
+	    } else {
+		$username = $userid;
+	    }
+	    debugging($this->errorlogtag." get_groupid($userid|$username) started ...\n", DEBUG_DEVELOPER);
+	    if( $this->is_teacher($username) ) {
+		debugging($this->errorlogtag." get_groupid($username) returns: teachers\n", DEBUG_DEVELOPER);
+	        return 'teachers';
+	    }
+	    if ( $DB->record_exists('user', array('username' => $username, 'auth' => 'ldap')) ) {
+		debugging($this->errorlogtag." get_groupid($username) returns: students\n", DEBUG_DEVELOPER);
+	        return 'students';
+	    }
+	    debugging($this->errorlogtag." get_groupid($username) returns: parents\n", DEBUG_DEVELOPER);
+	    return 'parents';
 	}
 
 	private function get_group($courseid, $groupid, $options = IGNORE_MULTIPLE) {
 	    global $DB;
-	    require_once $CFG->dirroot . '/group/lib.php';
+	    debugging($this->errorlogtag." get_group($courseid, $groupid, $options) started ... \n", DEBUG_DEVELOPER);
 	    if ( ! in_array($groupid, $this->groupids) ) {
 	        trigger_error($this->errorlogtag . ' get_group: impossible groupid ('. $groupid .')');
 	    }
-	    $group = $DB->get_record('groups', array('courseid' => $courseid, 'idnumber' => $groupid), $options);
+	    $group = $DB->get_record('groups', array('courseid'=>$courseid,'idnumber'=>$groupid));
+	    if ( ! $group ) {
+		$this->class_create_group($courseid, $groupid);
+		$group = $DB->get_record('groups', array('courseid' => $courseid, 'idnumber' => $groupid), $options);
+	    }
+	    debugging($this->errorlogtag." get_group($courseid, $groupid, $options) ended.\n", DEBUG_DEVELOPER);
 	    return $group;
 	}
 
 	private function class_create_group($courseid, $groupid) {
+	    global $CFG,$DB;
 	    require_once $CFG->dirroot . '/group/lib.php';
+	    debugging($this->errorlogtag." class_create_group($courseid, $groupid) started ... \n", DEBUG_DEVELOPER);
 	    if ( ! in_array($groupid, $this->groupids) ) {
 	        trigger_error($this->errorlogtag . 'create_group: impossible groupid ('. $groupid .')');
 	    }
+	    $name = $DB->get_field('course', 'shortname', array('id'=>$courseid), MUST_EXIST);
+	    $data = new stdClass;
 	    $data->courseid = $courseid;
 	    $groupdescription = 'class_'.$groupid.'_group_description';
-	    $data->description = $this->$groupdescription;
+	    $data->description = '<p>'.$this->config->$groupdescription.$name.'</p>';
 	    $data->descriptionformat = 1;
 	    $groupname = 'class_'.$groupid.'_group';
 	    $data->name = get_string($groupname, 'enrol_oss');
 	    $data->idnumber = $groupid;
-
+	    var_dump($data);
 	    $ret = groups_create_group($data);
 	    return $ret;
 	}
@@ -1396,12 +1432,14 @@ class enrol_oss_plugin extends enrol_plugin {
 
 	private function class_group_add_member($courseid, $groupid, $userid) {
 	    global $CFG;
-	    require_once $CFG->dirroot . '/groups/lib.php';
+	    require_once $CFG->dirroot . '/group/lib.php';
+	    debugging($this->errorlogtag." class_group_add_member($courseid,$groupid,$userid) started...\n", DEBUG_DEVELOPER);
 	    if ( ! in_array($groupid, $this->groupids) ) {
 	        trigger_error($this->errorlogtag . 'class_group_add_member: impossible groupid ('. $groupid .')');
 	    }
 	    $group = $this->get_group($courseid, $groupid);
 	    groups_add_member($group->id, $userid);
+	    debugging($this->errorlogtag." class_group_add_member($courseid,$groupid,$userid) ended.\n", DEBUG_DEVELOPER);
 	}
 
 	private function class_group_remove_member($courseid, $groupid, $userid) {

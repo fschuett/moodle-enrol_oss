@@ -33,5 +33,14 @@ $tasks = array(
         'day' => '*',
         'dayofweek' => '*',
         'month' => '*'
+    ),
+    array(
+        'classname' => '\enrol_oss\task\oss_sync_classes_task',
+        'blocking' => 0,
+        'minute' => '17',
+        'hour' => '22',
+        'day' => '*',
+        'dayofweek' => '*',
+        'month' => '*'
     )
 );

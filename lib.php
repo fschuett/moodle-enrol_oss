@@ -1215,12 +1215,20 @@ class enrol_oss_plugin extends enrol_plugin {
 			$to_unenrol = array_diff($mdl_members, $ldap_members);
 			$to_enrol_teachers = array();
 			$to_enrol_students = array();
+			$to_enrol_parents = array();
 			foreach($to_enrol as $user) {
-				if ($this->is_teacher($user)) {
-					$to_enrol_teachers[] = $user;
-				} else {
-					$to_enrol_students[] = $user;
-				}
+			    $groupid = $this->get_groupid($user);
+			    switch ( $groupid ) {
+			        case 'teachers':
+			            $to_enrol_teachers[] = $user;
+			            break;
+			        case 'students':
+			            $to_enrol_students[] = $user;
+			            break;
+			        case 'parents':
+			            $to_enrol_parents[] = $user;
+			            break;
+			    }
 			}
 			if (!empty($to_enrol) || !empty($to_unenrol)) {
 				mtrace($this->errorlogtag . "sync_classes_enrolments($class): "
@@ -1288,11 +1296,54 @@ class enrol_oss_plugin extends enrol_plugin {
 	 * @param $userid id of the user
 	 *
 	 */
-	private function sync_user_groups($userid) {
-
+	private function sync_user_groups($userid, $classes) {
+	    global $CFG;
+	    require_once $CFG->libdir . '/enrollib.php';
+	    $groupid = $this->get_groupid($userid);
+	    foreach($classes as $courseid => $course) {
+	        if ( ! $this->class_group_is_member($courseid, $groupid, $userid) ) {
+	            $this->class_group_add_member($courseid, $groupid, $userid);
+	        }
+	    }
 	}
 
+	/*
+	 * Add all enrolled users to their respective groups, if they are missing.
+	 *
+	 */
 	private function sync_class_groups($courseid) {
+	    global $CFG;
+	    require_once $CFG->libdir . '/enrollib.php';
+	    $context = context_course::instance($courseid);
+	    $users = get_enrolled_users($context);
+	    $teachers = get_enrolled_users($context, '', $this->get_group($courseid, 'teachers'));
+	    $students = get_enrolled_users($context, '', $this->get_group($courseid, 'students'));
+	    $parents = get_enrolled_users($context, '', $this->get_group($courseid, 'parents'));
+	    $users = array_diff_key($users, $teachers, $students, $parents);
+        foreach($users as $userid => $user) {
+            $groupid = $this->get_groupid($userid);
+            $this->class_group_add_member($courseid, $groupid, $userid);
+        }
+	}
+
+	/*
+	 * return the groupid, the user can possibly be member of
+	 * FIXME: This is very weak criteria.
+	 *
+	 * @param $userid id of the user
+	 * @return $string groupid name
+	 *
+	 */
+	private function get_groupid($userid) {
+	    require_once $CFG->libdir .'/classes/user.php';
+	   if( $this->is_teacher($userid) ) {
+	       return 'teachers';
+	   }
+	   $user = get_user($userid);
+	   if( $user->auth == 'ldap') {
+	       return 'students';
+	   }
+	   return 'parents';
 	}
 
 	private function get_group($courseid, $groupid, $options = IGNORE_MULTIPLE) {

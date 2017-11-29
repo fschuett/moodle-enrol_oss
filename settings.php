@@ -33,7 +33,7 @@ if ($ADMIN->fulltree) {
     $yesno = array(get_string('no'), get_string('yes'));
 
     // Heading.
-    $settings->add(new admin_setting_heading('enrol_oss_settings', 
+    $settings->add(new admin_setting_heading('enrol_oss_settings',
     		get_string('pluginname','enrol_oss'),
             get_string('pluginname_desc', 'enrol_oss')));
 
@@ -57,7 +57,7 @@ if ($ADMIN->fulltree) {
 
     // Teachers settings.
     $settings->add(new admin_setting_heading('enrol_oss_teacher_settings',
-            get_string('teacher_settings', 'enrol_oss'), 
+            get_string('teacher_settings', 'enrol_oss'),
     		get_string('teacher_settings_desc','enrol_oss')));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/teachers_group_name',
             get_string('teachers_group_name_key', 'enrol_oss'),
@@ -76,7 +76,7 @@ if ($ADMIN->fulltree) {
 
     // Teachers context settings.
     $settings->add(new admin_setting_heading('enrol_oss_teachers_context_settings',
-            get_string('teachers_context_settings', 'enrol_oss'), 
+            get_string('teachers_context_settings', 'enrol_oss'),
     		get_string('teachers_context_settings_desc','enrol_oss')));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/teachers_course_context',
             get_string('teachers_course_context_key', 'enrol_oss'),
@@ -104,7 +104,7 @@ if ($ADMIN->fulltree) {
 
     // Students settings.
     $settings->add(new admin_setting_heading('enrol_oss_students_settings',
-            get_string('students_settings', 'enrol_oss'), 
+            get_string('students_settings', 'enrol_oss'),
     		get_string('students_settings_desc', 'enrol_oss')));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/student_class_numbers',
             get_string('student_class_numbers_key', 'enrol_oss'),
@@ -122,10 +122,10 @@ if ($ADMIN->fulltree) {
             get_string('student_role_key', 'enrol_oss'),
             get_string('student_role', 'enrol_oss'), $student->id, $options));
     }
-    
+
     // Class settings.
     $settings->add(new admin_setting_heading('enrol_oss_class_settings',
-    		get_string('class_settings','enrol_oss'), 
+    		get_string('class_settings','enrol_oss'),
     		get_string('class_settings_desc','enrol_oss')));
     $settings->add(new admin_setting_configcheckbox('enrol_oss/classes_enabled',
 		get_string('classes_enabled', 'enrol_oss'),
@@ -147,7 +147,7 @@ if ($ADMIN->fulltree) {
     		get_string('class_template_desc', 'enrol_oss'), 'template'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/class_prefixes',
     		get_string('class_prefixes', 'enrol_oss'),
-    		get_string('class_prefixes_desc', 'enrol_oss'), '5,6,7,8,9,10,11,12'));
+    		get_string('class_prefixes_desc', 'enrol_oss'), '05,06,07,08,09,10,11,12,13'));
     if (!during_initial_install()) {
         $options = get_default_enrol_roles(context_system::instance());
         $teacher = get_archetype_roles('editingteacher');
@@ -164,7 +164,29 @@ if ($ADMIN->fulltree) {
             get_string('class_students_role', 'enrol_oss'),
             get_string('class_students_role_desc', 'enrol_oss'), $student->id, $options));
     }
+    if (!during_initial_install()) {
+        $options = get_default_enrol_roles(context_system::instance());
+        $student = get_archetype_roles('student');
+        $student = reset($student);
+        $settings->add(new admin_setting_configselect('enrol_oss/class_students_role',
+            get_string('class_parents_role', 'enrol_oss'),
+            get_string('class_parents_role_desc', 'enrol_oss'), $student->id, $options));
+    }
+    // class group settings
     $settings->add(new admin_setting_configcheckbox('enrol_oss/groups_enabled',
 		get_string('groups_enabled', 'enrol_oss'),
 		get_string('groups_enabled_desc', 'enrol_oss'), 0));
+    $settings->add(new admin_setting_configtext('enrol_oss/class_teachers_group_description',
+        get_string('class_teachers_group_description', 'enrol_oss'),
+        get_string('class_teachers_group_description_desc', 'enrol_oss'),
+        'teachers of class ', PARAM_TEXT));
+    $settings->add(new admin_setting_configtext('enrol_oss/class_students_group_description',
+        get_string('class_students_group_description', 'enrol_oss'),
+        get_string('class_students_group_description_desc', 'enrol_oss'),
+        'students of class ', PARAM_TEXT));
+    $settings->add(new admin_setting_configtext('enrol_oss/class_parents_group_description',
+        get_string('class_parents_group_description', 'enrol_oss'),
+        get_string('class_parents_group_description_desc', 'enrol_oss'),
+        'parents of class ', PARAM_TEXT));
+
 }

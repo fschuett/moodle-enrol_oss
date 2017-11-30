@@ -168,7 +168,7 @@ if ($ADMIN->fulltree) {
         $options = get_default_enrol_roles(context_system::instance());
         $student = get_archetype_roles('student');
         $student = reset($student);
-        $settings->add(new admin_setting_configselect('enrol_oss/class_students_role',
+        $settings->add(new admin_setting_configselect('enrol_oss/class_parents_role',
             get_string('class_parents_role', 'enrol_oss'),
             get_string('class_parents_role_desc', 'enrol_oss'), $student->id, $options));
     }

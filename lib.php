@@ -1,4 +1,4 @@
-<?php
+// <?php
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -27,18 +27,15 @@
  * @copyright  2013 Frank Schütte <fschuett@gymhim.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-ini_set('display_errors',1);
-ini_set('display_startup_errors',1);
-function kill( $data ) { die( var_dump( $data ) ); }
 
 defined('MOODLE_INTERNAL') || die();
 
 class enrol_oss_plugin extends enrol_plugin {
     protected $enroltype = 'enrol_oss';
-    protected $errorlogtag = '[ENROL OSS] ';
+    static protected $errorlogtag = '[ENROL OSS] ';
     protected $idnumber_teachers_cat = 'teachercat';
     protected $idnumber_attic_cat = 'atticcat';
-    protected $idnumber_class_cat = 'classescat';
+    static protected $idnumber_class_cat = 'classescat';
     protected $groupids = array('teachers', 'students', 'parents');
     protected $teacher_array=Array();
     protected $authldap;
@@ -116,7 +113,7 @@ class enrol_oss_plugin extends enrol_plugin {
         // Correct the cohort subscriptions.
         $ldap_groups = $this->ldap_get_grouplist($user->username);
         if(!$ldap_groups){
-            debugging($this->errorlogtag . ' no ldap connection available, sync_user_enrolments aborted.');
+            debugging(self::$errorlogtag . ' no ldap connection available, sync_user_enrolments aborted.');
             return TRUE;
         }
         $cohorts = $this->get_cohortlist($user->username);
@@ -124,7 +121,7 @@ class enrol_oss_plugin extends enrol_plugin {
             if (!isset($cohorts[$groupname])) {
                 $cohortid = $this->get_cohort_id($groupname);
                 cohort_add_member($cohortid, $user->id);
-                mtrace($this->errorlogtag."added ".$user->id." to cohort ".$cohortid);
+                mtrace(self::$errorlogtag."added ".$user->id." to cohort ".$cohortid);
             }
         }
 
@@ -163,7 +160,7 @@ class enrol_oss_plugin extends enrol_plugin {
                 		$user->username .' in '.$this->teacher_obj->name .". That is likely to cause problems.",E_USER_WARNING);
             	    }
             	    if (!$this->delete_move_teacher_to_attic($cat)) {
-                        debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->idnumber . ' to attic.');
+                        debugging(self::$errorlogtag . 'could not move teacher category for user ' . $cat->idnumber . ' to attic.');
                     }
                     $edited = true;
                 }
@@ -173,16 +170,16 @@ class enrol_oss_plugin extends enrol_plugin {
                 $cat = $DB->get_record('course_categories', array('idnumber'=>$user->username,
                         'parent'=> $this->teacher_obj->id),'*',IGNORE_MULTIPLE);
                 if (!$cat) {
-            	    debugging($this->errorlogtag . 'about to add teacher category for ' . $user->username."\n");
+            	    debugging(self::$errorlogtag . 'about to add teacher category for ' . $user->username."\n");
                     $cat = $this->teacher_add_category($user);
                     if (!$cat) {
-                        debugging($this->errorlogtag . 'autocreate teacher category failed: ' . $user->username."\n");
+                        debugging(self::$errorlogtag . 'autocreate teacher category failed: ' . $user->username."\n");
                     } else {
                         $edited = true;
                     }
                 } else if ($DB->count_records('course_categories', array('idnumber'=>$user->username,
             		'parent'=>$this->teacher_obj->id)) > 1) {
-            	    debugging($this->errorlogtag . ' WARNING: there are more than one matching category with idnumber '.
+            	    debugging(self::$errorlogtag . ' WARNING: there are more than one matching category with idnumber '.
         		    $user->username .' in '.$this->teacher_obj->name .". That is likely to cause problems.");
             	}
                 if ($cat AND !$this->teacher_has_role($user,$cat)) {
@@ -209,11 +206,11 @@ class enrol_oss_plugin extends enrol_plugin {
         global $CFG, $DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
-        debugging($this->errorlogtag.'sync_enrolments... started '.date("H:i:s"),
+        debugging(self::$errorlogtag.'sync_enrolments... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $ldap_groups = $this->ldap_get_grouplist();
         if (!$ldap_groups) {
-            debugging($this->errorlogtag.' ldap connection not available, sync_enrolments aborted.');
+            debugging(self::$errorlogtag.' ldap connection not available, sync_enrolments aborted.');
             throw new dml_connection_exception('no ldap connection available - sync_enrolments failed!');
         }
         foreach ($ldap_groups as $group => $groupname) {
@@ -236,7 +233,7 @@ class enrol_oss_plugin extends enrol_plugin {
             }
         }
 
-        debugging($this->errorlogtag.'sync_enrolments: remove unneeded cohorts... started '
+        debugging(self::$errorlogtag.'sync_enrolments: remove unneeded cohorts... started '
             . date("H:i:s"), DEBUG_DEVELOPER);
         $toremove = array();
         $cohorts = $this->get_cohortlist();
@@ -266,25 +263,25 @@ class enrol_oss_plugin extends enrol_plugin {
 
         $edited = false;
 
-        debugging($this->errorlogtag.'sync_enrolments: autoremove teacher course categories '
+        debugging(self::$errorlogtag.'sync_enrolments: autoremove teacher course categories '
             . ' of removed teachers if requested... started '.date("H:i:s"), DEBUG_DEVELOPER);
         if ($this->config->teachers_category_autoremove) {
             $teachercontext = coursecat::get($this->teacher_obj->id);
             if (empty($teachercontext)) {
-	        debugging($this->errorlogtag . 'Could not get teacher context');
+	        debugging(self::$errorlogtag . 'Could not get teacher context');
 	        return false;
             }
             if ($categories = $teachercontext->get_children()) {
                 foreach ($categories as $cat) {
                 	if (empty($cat->idnumber)) {
-                		debugging($this->errorlogtag .
+                		debugging(self::$errorlogtag .
                 				sprintf('teacher category %s number %d without teacher userid',
                 						$cat->name, $cat->id));
                 		continue;
                 	}
                     if (!$this->is_teacher($cat->idnumber) OR $this->is_ignored_teacher($cat->idnumber)) {
                         if (!$this->delete_move_teacher_to_attic($cat)) {
-                            debugging($this->errorlogtag . 'could not move teacher category for user ' . $cat->idnumber . ' to attic.');
+                            debugging(self::$errorlogtag . 'could not move teacher category for user ' . $cat->idnumber . ' to attic.');
                         }
                         $edited = true;
                     }
@@ -292,7 +289,7 @@ class enrol_oss_plugin extends enrol_plugin {
             }
         }
 
-        debugging($this->errorlogtag.'sync_enrolments: autocreate teacher course categories '
+        debugging(self::$errorlogtag.'sync_enrolments: autocreate teacher course categories '
             . 'for new teachers if requested... started '.date("H:i:s"), DEBUG_DEVELOPER);
         if ($this->config->teachers_category_autocreate) {
             foreach ($this->teacher_array as $teacher) {
@@ -307,13 +304,13 @@ class enrol_oss_plugin extends enrol_plugin {
                 if (empty($cat_obj)) {
                     $cat_obj = $this->teacher_add_category($user);
                     if (!$cat_obj) {
-                        debugging($this->errorlogtag . 'autocreate teacher category failed: ' . $teacher);
+                        debugging(self::$errorlogtag . 'autocreate teacher category failed: ' . $teacher);
                         continue;
                     }
                     $edited = true;
                 } else if ($DB->count_records('course_categories',
                         array('idnumber'=>$teacher, 'parent' => $this->teacher_obj->id)) > 1) {
-            	    debugging($this->errorlogtag . ' WARNING: there are more than one matching category with idnumber '.
+            	    debugging(self::$errorlogtag . ' WARNING: there are more than one matching category with idnumber '.
         		    $teacher .' in '.$this->teacher_obj->name .". That is likely to cause problems.");
 
                 }
@@ -323,7 +320,7 @@ class enrol_oss_plugin extends enrol_plugin {
             }
         }
         if ($edited) {
-            debugging($this->errorlogtag.'sync_enrolments: resort categories... started '
+            debugging(self::$errorlogtag.'sync_enrolments: resort categories... started '
                 . date("H:i:s"), DEBUG_DEVELOPER);
             $this->resort_categories($this->teacher_obj->id);
         }
@@ -348,12 +345,12 @@ class enrol_oss_plugin extends enrol_plugin {
         if (empty($user)) {
             $params = array('auth' => 'ldap', 'city' => '');
             if (!$DB->set_field('user', 'city', $CFG->defaultcity, $params)) {
-                debugging($this->errorlogtag . "update of city field for many users failed.");
+                debugging(self::$errorlogtag . "update of city field for many users failed.");
             }
         } else {
             if ($user->city == '') {
                 if (!$DB->set_field('user', 'city', $CFG->defaultcity, array('id' => $user->id))) {
-                    debugging($this->errorlogtag . 'update of city field for user ' . $user->username .
+                    debugging(self::$errorlogtag . 'update of city field for user ' . $user->username .
                             " failed.");
                 }
             }
@@ -370,7 +367,7 @@ class enrol_oss_plugin extends enrol_plugin {
     public function sync_cohort_enrolments() {
         global $DB, $CFG;
         require_once($CFG->dirroot . '/enrol/cohort/locallib.php');
-        debugging($this->errorlogtag.'sync_cohort_enrolments... started '.date("H:i:s"), DEBUG_DEVELOPER);
+        debugging(self::$errorlogtag.'sync_cohort_enrolments... started '.date("H:i:s"), DEBUG_DEVELOPER);
         $edited = false;
 
         $enrol = enrol_get_plugin('cohort');
@@ -503,15 +500,15 @@ class enrol_oss_plugin extends enrol_plugin {
     private function ldap_get_grouplist($username = "*", $group_pattern = NULL, $all_teachers = false) {
         global $CFG, $DB;
 
-        debugging($this->errorlogtag.'ldap_get_grouplist... started '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_grouplist... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
         if (!isset($authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
         }
-        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_connect '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $ldapconnection = $this->ldap_connect_ul($authldap);
-        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $fresult = array ();
         if (!$ldapconnection) {
@@ -552,10 +549,10 @@ class enrol_oss_plugin extends enrol_plugin {
                 array_push($fresult, ($groups[$i][$this->config->attribute][0]));
             }
         }
-        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_close '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_close '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $authldap->ldap_close();
-        debugging($this->errorlogtag.'ldap_get_grouplist... ldap_closed '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_closed '.date("H:i:s"),
             DEBUG_DEVELOPER);
         // Remove teachers from all but teachers groups.
         if ($username != "*" AND $this->is_teacher($username)) {
@@ -575,17 +572,17 @@ class enrol_oss_plugin extends enrol_plugin {
     private function ldap_get_group_members($group, $teachers_ok = false) {
         global $CFG, $DB;
 
-        debugging($this->errorlogtag.'ldap_get_group_members('.$group.')... started '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_group_members('.$group.')... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $ret = array ();
         $members = array ();
         if (!isset($authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
         }
-        debugging($this->errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $ldapconnection = $this->ldap_connect_ul($authldap);
-        debugging($this->errorlogtag.'ldap_get_groupmembers... ldap_connected '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
 
         $group = core_text::convert($group, 'utf-8', $this->config->ldapencoding);
@@ -593,7 +590,7 @@ class enrol_oss_plugin extends enrol_plugin {
         if (!$ldapconnection) {
             return $ret;
         }
-        debugging($this->errorlogtag.'ldap_get_group_members... connected to ldap '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_group_members... connected to ldap '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $queryg = "(&(cn=" . trim($group) . ")(objectClass=" . $this->config->object . "))";
         $contexts = explode(';', $this->config->contexts);
@@ -604,18 +601,18 @@ class enrol_oss_plugin extends enrol_plugin {
                 continue;
             }
 
-            debugging($this->errorlogtag .
+            debugging(self::$errorlogtag .
                 sprintf('ldap_get_group_members... ldap_search(%s|%s) %s',
                     $context, $queryg, date("H:i:s")), DEBUG_DEVELOPER);
             $resultg = ldap_search($ldapconnection, $context, $queryg);
 
             if (!empty ($resultg) AND ldap_count_entries($ldapconnection, $resultg)) {
-                debugging($this->errorlogtag.'ldap_get_group_members... ldap_get_entries()'
+                debugging(self::$errorlogtag.'ldap_get_group_members... ldap_get_entries()'
                     .date("H:i:s"), DEBUG_DEVELOPER);
                 $entries = ldap_get_entries($ldapconnection, $resultg);
 
                 if (isset($entries[0][$this->config->member_attribute])) {
-                    debugging($this->errorlogtag .
+                    debugging(self::$errorlogtag .
                         sprintf('ldap_get_group_members... entries(%s)(%d) %s',
                             $this->config->member_attribute,
                             count($entries[0][$this->config->member_attribute]),
@@ -632,10 +629,10 @@ class enrol_oss_plugin extends enrol_plugin {
                 }
             }
         }
-        debugging($this->errorlogtag.'ldap_get_group_members... ldap_close '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_group_members... ldap_close '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $authldap->ldap_close();
-        debugging($this->errorlogtag.'ldap_get_groupmembers... ldap_closed '.date("H:i:s"),
+        debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_closed '.date("H:i:s"),
             DEBUG_DEVELOPER);
         foreach ($members as $member) {
             if (isset($select)) {
@@ -645,11 +642,11 @@ class enrol_oss_plugin extends enrol_plugin {
             }
         }
         if (isset($select)) {
-        	debugging($this->errorlogtag."ldap_get_group_members... (".$select. ") ".date("H:i:s"),
+        	debugging(self::$errorlogtag."ldap_get_group_members... (".$select. ") ".date("H:i:s"),
             	DEBUG_DEVELOPER);
         }
         else {
-        	debugging($this->errorlogtag."ldap_get_group_members... (no selected users) ".date("H:i:s"),
+        	debugging(self::$errorlogtag."ldap_get_group_members... (no selected users) ".date("H:i:s"),
         			DEBUG_DEVELOPER);
         }
         if (isset($select)) {
@@ -660,7 +657,7 @@ class enrol_oss_plugin extends enrol_plugin {
             }
         } else {
             if (debugging()) {
-                error_log($this->errorlogtag.'ldap_get_group_members... '.$group.' is empty. '
+                error_log(self::$errorlogtag.'ldap_get_group_members... '.$group.' is empty. '
                     .date("H:i:s"));
             }
         }
@@ -677,7 +674,7 @@ class enrol_oss_plugin extends enrol_plugin {
     private function get_cohort_id($groupname, $autocreate = true) {
         global $DB;
 
-        debugging($this->errorlogtag.'get_cohort_id('.$groupname.')... started '.date("H:i:s"),
+        debugging(self::$errorlogtag.'get_cohort_id('.$groupname.')... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $params = array (
             'idnumber' => $groupname,
@@ -796,7 +793,7 @@ class enrol_oss_plugin extends enrol_plugin {
     private function get_cohort_members($cohortid) {
         global $DB;
 
-        debugging($this->errorlogtag.'get_cohort_members('.$cohortid.')... started '.date("H:i:s"),
+        debugging(self::$errorlogtag.'get_cohort_members('.$cohortid.')... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $sql = " SELECT u.id, u.username
                           FROM {user} u
@@ -867,10 +864,10 @@ class enrol_oss_plugin extends enrol_plugin {
      * @uses $CFG
      */
     private function is_teacher($userid) {
-        debugging($this->errorlogtag.'is_teacher('.$userid.')... started '.date("H:i:s"),
+        debugging(self::$errorlogtag.'is_teacher('.$userid.')... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
         if (empty($userid)) {
-        	debugging($this->errorlogtag.'is_teacher called with empty userid.');
+        	debugging(self::$errorlogtag.'is_teacher called with empty userid.');
         	return false;
         }
         if (empty($this->teacher_array)) {
@@ -886,10 +883,10 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     private function init_teacher_array() {
         global $CFG;
-        debugging($this->errorlogtag.'init_teacher_array... started '.date("H:i:s"),
+        debugging(self::$errorlogtag.'init_teacher_array... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $this->teacher_array = $this->ldap_get_group_members($this->config->teachers_group_name, true);
-        debugging($this->errorlogtag.'init_teacher_array... ended '.date("H:i:s"),
+        debugging(self::$errorlogtag.'init_teacher_array... ended '.date("H:i:s"),
             DEBUG_DEVELOPER);
         if (empty($this->teacher_array)) {
             return false;
@@ -907,11 +904,11 @@ class enrol_oss_plugin extends enrol_plugin {
         // Create teacher category if needed.
         $cat_obj = $DB->get_record( 'course_categories', array('idnumber'=>$this->idnumber_teachers_cat, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$cat_obj) { // Category doesn't exist.
-            $cat_obj = $this->create_category($this->config->teachers_course_context,$this->idnumber_teachers_cat,
+            $cat_obj = self::create_category($this->config->teachers_course_context,$this->idnumber_teachers_cat,
                     get_string('teacher_context_desc', 'enrol_oss'));
-            debugging($this->errorlogtag."created teachers course category ".$cat_obj->id, DEBUG_DEVELOPER);
+            debugging(self::$errorlogtag."created teachers course category ".$cat_obj->id, DEBUG_DEVELOPER);
             if (!$cat_obj) {
-                debugging($this->errorlogtag . 'autocreate/autoremove could not create teacher course context');
+                debugging(self::$errorlogtag . 'autocreate/autoremove could not create teacher course context');
             }
             context_coursecat::instance ( 0 )->mark_dirty ();
         }
@@ -927,11 +924,11 @@ class enrol_oss_plugin extends enrol_plugin {
         global $CFG, $DB;
         $this->attic_obj = $DB->get_record( 'course_categories', array('idnumber'=>$this->idnumber_attic_cat, 'parent' => 0),'*',IGNORE_MULTIPLE);
         if (!$this->attic_obj) { // Category for removed teachers doesn't exist.
-            $this->attic_obj = $this->create_category($this->config->teachers_removed, $this->idnumber_attic_cat,
+            $this->attic_obj = self::create_category($this->config->teachers_removed, $this->idnumber_attic_cat,
                     get_string('attic_description', 'enrol_oss'),0,99999,0);
-            debugging($this->errorlogtag."created attic course category ".$cat_obj->id, DEBUG_DEVELOPER);
+            debugging(self::$errorlogtag."created attic course category ".$cat_obj->id, DEBUG_DEVELOPER);
             if (!$this->attic_obj) {
-                debugging($this->errorlogtag .'autocreate/autoremove could not create removed teachers context');
+                debugging(self::$errorlogtag .'autocreate/autoremove could not create removed teachers context');
             }
         }
         return $this->attic_obj;
@@ -946,29 +943,29 @@ class enrol_oss_plugin extends enrol_plugin {
 	 *
 	 * @uses $CFG,$DB
 	 */
-	private function get_class_category() {
+	public static function get_class_category($config) {
 		global $CFG, $DB;
 		require_once ($CFG->libdir . '/coursecatlib.php');
 		// Create class category if needed.
 		$cat_obj = $DB->get_record ( 'course_categories', array (
-				'idnumber' => $this->idnumber_class_cat,
+				'idnumber' => self::$idnumber_class_cat,
 				'parent' => 0
 		), 'id', IGNORE_MULTIPLE );
 		if ( ! $cat_obj ) {
-			if ( $this->config->class_category_autocreate ) {
-				$cat_obj = $this->create_category ( $this->config->class_category, $this->idnumber_class_cat, get_string ( 'class_category_description', 'enrol_oss' ) );
+			if ( $config->class_category_autocreate ) {
+				$cat_obj = self::create_category( $config->class_category, self::$idnumber_class_cat, get_string ( 'class_category_description', 'enrol_oss' ) );
 				if ($cat_obj) {
-					debugging ( $this->errorlogtag . "created class course category " . $cat_obj->id, DEBUG_DEVELOPER );
+					debugging ( self::$errorlogtag . "created class course category " . $cat_obj->id, DEBUG_DEVELOPER );
 					context_coursecat::instance ( 0 )->mark_dirty ();
 				} else {
-					debugging ( $this->errorlogtag . 'autocreate/autoremove could not create class course context' );
+					debugging ( self::$errorlogtag . 'autocreate/autoremove could not create class course context' );
 				}
 			}
 		} else {
 			$cat_obj = coursecat::get($cat_obj->id);
 		}
 		if (! $cat_obj) {
-			debugging ( $this->errorlogtag . "class category $this->{idnumber_class_cat} not found." );
+			debugging ( self::$errorlogtag . "class category ".self::$idnumber_class_cat." not found." );
 		}
 		return $cat_obj;
 	}
@@ -986,13 +983,13 @@ class enrol_oss_plugin extends enrol_plugin {
 		if ($userid != "*") {
 			$user = get_user_by_username($userid, 'id', null, IGNORE_MISSING);
 			if (!$user) {
-				debugging( $this->errorlogtag . " get_classes_moodle ( $userid ): user not found." );
+				debugging( self::$errorlogtag . " get_classes_moodle ( $userid ): user not found." );
 				return $ret;
 			}
 		} else {
 			$user = null;
 		}
-		$classcat = $this->get_class_category();
+		$classcat = self::get_class_category($this->config);
 		if (!$classcat) {
 			return $ret;
 		}
@@ -1019,11 +1016,15 @@ class enrol_oss_plugin extends enrol_plugin {
 	private function get_classes_ldap($userid = "*") {
 		global $CFG;
 		// create class filter
+		if ( $this->config->class_use_prefixes ) {
 		$classes = explode ( ',', $this->config->class_prefixes );
 		foreach ( $classes as $c ) {
-			$pattern [] = '(' . $this->config->attribute . '=' . $c . '*)';
+			$pattern [] = '(' . $this->config->class_attribute . '=' . $c . '*)';
 		}
 		$pattern = '(|' . implode ( $pattern ) . ')';
+		} else {
+			$pattern = '(' . $this->config->class_attribute . '=' . $this->config->class_attribute_value . ')';
+		}
 		return $this->ldap_get_grouplist($userid, $pattern, true);
 	}
 
@@ -1037,14 +1038,11 @@ class enrol_oss_plugin extends enrol_plugin {
 		if (empty($classes)) {
 			return;
 		}
-		$classcat = $this->get_class_category();
+		$classcat = self::get_class_category($this->config);
 		if (!$classcat) {
 			return;
 		}
-		//copied from externallib.php#1179
-		$template = $DB->get_record('course', array(
-				'shortname' => $this->config->class_template,
-				'category' => $classcat->id),'*', IGNORE_MULTIPLE);
+		$template = $DB->get_record('course', array('id' => $this->config->class_template),'*', IGNORE_MISSING);
 		if ($template) {
 			$template = $template->id;
 		}
@@ -1067,7 +1065,7 @@ class enrol_oss_plugin extends enrol_plugin {
 		if (empty($classes)) {
 			return;
 		}
-		$classcat = $this->get_class_category();
+		$classcat = self::get_class_category($this->config);
 		if (!$classcat) {
 			return;
 		}
@@ -1096,20 +1094,21 @@ class enrol_oss_plugin extends enrol_plugin {
 		global $CFG;
 		require_once ($CFG->dirroot . '/course/externallib.php');
 		require_once ($CFG->dirroot . '/course/lib.php');
-		debugging($this->errorlogtag . "create_class ($class, $catid, $template) started...");
+		debugging(self::$errorlogtag . "create_class ($class, $catid, $template) started...");
+		$fullname = get_string("class_localname","enrol_oss") . " " . $class;
 		if (!$template) {
 			$data = new stdclass();
 			$data->shortname = $class;
-			$data->fullname = get_string("class_localname","enrol_oss") . " " . $class;
+			$data->fullname = $fullname;
 			$data->visible = 1;
 			$data->category = $catid;
 			try {
 				$courseid = create_course($data);
 			} catch ( Exception $e ) {
-				debugging($this->errorlogtag . "create_class ($class) fehlgeschlagen: ".$e->getMessage()."\n");
+				debugging(self::$errorlogtag . "create_class ($class) fehlgeschlagen: ".$e->getMessage()."\n");
 			}
 		} else {
-			$course = duplicate_course($template, $class, $class, $catid, 1);
+			$course = duplicate_course($template, $fullname, $class, $catid, 1);
 		}
 	}
 
@@ -1136,7 +1135,7 @@ class enrol_oss_plugin extends enrol_plugin {
 			return;
 		}
 		if ($this->config->class_autocreate || $this->config->class_autoremove) {
-			debugging($this->errorlogtag . "sync_classes($userid)...", DEBUG_DEVELOPER);
+			debugging(self::$errorlogtag . "sync_classes($userid)...", DEBUG_DEVELOPER);
 			$ldap_classes = $this->get_classes_ldap();
 			$mdl_classes = $this->get_classes_moodle();
 			if ($this->config->class_autocreate) {
@@ -1199,7 +1198,7 @@ class enrol_oss_plugin extends enrol_plugin {
 
 	function sync_classes_enrolments() {
 		global $CFG, $DB;
-		$class_obj = $this->get_class_category();
+		$class_obj = self::get_class_category($this->config);
 		if (!$class_obj) {
 			return;
 		}
@@ -1210,7 +1209,7 @@ class enrol_oss_plugin extends enrol_plugin {
 			$context = context_course::instance($course->id);
 			$enrol_instance = $this->get_enrol_instance($course);
 			if (!$enrol_instance) {
-				debugging($this->errorlogtag . "sync_classes_enrolments($class): cannot get enrol_instance, ignoring.\n");
+				debugging(self::$errorlogtag . "sync_classes_enrolments($class): cannot get enrol_instance, ignoring.\n");
 				continue;
 			}
 			$mdl_user_objects = get_enrolled_users($context);
@@ -1238,7 +1237,7 @@ class enrol_oss_plugin extends enrol_plugin {
 			    }
 			}
 			if (!empty($to_enrol) || !empty($to_unenrol)) {
-				mtrace($this->errorlogtag . "sync_classes_enrolments($class): "
+				mtrace(self::$errorlogtag . "sync_classes_enrolments($class): "
 					. "enrol(" . implode(",", $to_enrol) . ") "
 					. "unenrol(" . implode(",", $to_unenrol) . ")\n");
 			}
@@ -1268,11 +1267,11 @@ class enrol_oss_plugin extends enrol_plugin {
 						'auth' => 'ldap'
 				) );
 			if (!$user) {
-				debugging ( $this->errorlogtag . "class_enrol($username) not found in ldap!");
+				debugging ( self::$errorlogtag . "class_enrol($username) not found in ldap!");
 				continue;
 			}
 			$this->enrol_user($enrol_instance, $user->id, $role);
-			mtrace ( $this->errorlogtag . "enrolled role id $role for " . $username
+			mtrace ( self::$errorlogtag . "enrolled role id $role for " . $username
 				. "(" . $user->id . ") in ".$course->shortname."(".$course->id.")\n" );
 		}
 	}
@@ -1288,11 +1287,11 @@ class enrol_oss_plugin extends enrol_plugin {
 						'auth' => 'ldap'
 				) );
 			if (!$user) {
-				debugging ( $this->errorlogtag . "class_unenrol($username) not found in ldap!\n");
+				debugging ( self::$errorlogtag . "class_unenrol($username) not found in ldap!\n");
 				continue;
 			}
 			$this->unenrol_user($enrol_instance, $user->id);
-			debugging ( $this->errorlogtag . "unenrolled user ".$username."(".$user->id.") from ".$course->shortname."(".$course->id.")\n", DEBUG_DEVELOPER );
+			debugging ( self::$errorlogtag . "unenrolled user ".$username."(".$user->id.") from ".$course->shortname."(".$course->id.")\n", DEBUG_DEVELOPER );
 		}
 	}
 
@@ -1321,28 +1320,27 @@ class enrol_oss_plugin extends enrol_plugin {
 	private function sync_class_groups($courseid) {
 	    global $CFG;
 	    require_once $CFG->libdir . '/enrollib.php';
-	    debugging($this->errorlogtag." sync_class_groups($courseid) started...\n", DEBUG_DEVELOPER);
+	    debugging(self::$errorlogtag." sync_class_groups($courseid) started...\n", DEBUG_DEVELOPER);
 	    $context = context_course::instance($courseid);
 	    $users = get_enrolled_users($context);
 	    $teachers = array();
 	    $students = array();
 	    $parents = array();
 	    if ( $group = $this->get_group($courseid, 'teachers') ) {
-		$teachers = get_enrolled_users($context, '', $group->id);
+            $teachers = get_enrolled_users($context, '', $group->id);
 	    }
 	    if ( $group = $this->get_group($courseid, 'students') ) {
-		$students = get_enrolled_users($context, '', $group->id);
+            $students = get_enrolled_users($context, '', $group->id);
 	    }
 	    if ( $group = $this->get_group($courseid, 'parents') ) {
-		$parents = get_enrolled_users($context, '', $group->id);
+            $parents = get_enrolled_users($context, '', $group->id);
 	    }
 	    $users = array_diff_key($users, $teachers, $students, $parents);
-	    var_dump(array_keys($users));
-    	    foreach($users as $userid => $user) {
+        foreach($users as $userid => $user) {
         	$groupid = $this->get_groupid($userid);
         	$this->class_group_add_member($courseid, $groupid, $userid);
     	    }
-    	    debugging($this->errorlogtag." sync_class_groups($courseid) ended.\n", DEBUG_DEVELOPER);
+    	    debugging(self::$errorlogtag." sync_class_groups($courseid) ended.\n", DEBUG_DEVELOPER);
 	}
 
 	/*
@@ -1360,40 +1358,40 @@ class enrol_oss_plugin extends enrol_plugin {
 	    } else {
 		$username = $userid;
 	    }
-	    debugging($this->errorlogtag." get_groupid($userid|$username) started ...\n", DEBUG_DEVELOPER);
+	    debugging(self::$errorlogtag." get_groupid($userid|$username) started ...\n", DEBUG_DEVELOPER);
 	    if( $this->is_teacher($username) ) {
-		debugging($this->errorlogtag." get_groupid($username) returns: teachers\n", DEBUG_DEVELOPER);
+		debugging(self::$errorlogtag." get_groupid($username) returns: teachers\n", DEBUG_DEVELOPER);
 	        return 'teachers';
 	    }
 	    if ( $DB->record_exists('user', array('username' => $username, 'auth' => 'ldap')) ) {
-		debugging($this->errorlogtag." get_groupid($username) returns: students\n", DEBUG_DEVELOPER);
+		debugging(self::$errorlogtag." get_groupid($username) returns: students\n", DEBUG_DEVELOPER);
 	        return 'students';
 	    }
-	    debugging($this->errorlogtag." get_groupid($username) returns: parents\n", DEBUG_DEVELOPER);
+	    debugging(self::$errorlogtag." get_groupid($username) returns: parents\n", DEBUG_DEVELOPER);
 	    return 'parents';
 	}
 
 	private function get_group($courseid, $groupid, $options = IGNORE_MULTIPLE) {
 	    global $DB;
-	    debugging($this->errorlogtag." get_group($courseid, $groupid, $options) started ... \n", DEBUG_DEVELOPER);
+	    debugging(self::$errorlogtag." get_group($courseid, $groupid, $options) started ... \n", DEBUG_DEVELOPER);
 	    if ( ! in_array($groupid, $this->groupids) ) {
-	        trigger_error($this->errorlogtag . ' get_group: impossible groupid ('. $groupid .')');
+	        trigger_error(self::$errorlogtag . ' get_group: impossible groupid ('. $groupid .')');
 	    }
 	    $group = $DB->get_record('groups', array('courseid'=>$courseid,'idnumber'=>$groupid));
 	    if ( ! $group ) {
-		$this->class_create_group($courseid, $groupid);
-		$group = $DB->get_record('groups', array('courseid' => $courseid, 'idnumber' => $groupid), $options);
+            $this->class_create_group($courseid, $groupid);
+            $group = $DB->get_record('groups', array('courseid' => $courseid, 'idnumber' => $groupid), '*', $options);
 	    }
-	    debugging($this->errorlogtag." get_group($courseid, $groupid, $options) ended.\n", DEBUG_DEVELOPER);
+	    debugging(self::$errorlogtag." get_group($courseid, $groupid, $options) ended.\n", DEBUG_DEVELOPER);
 	    return $group;
 	}
 
 	private function class_create_group($courseid, $groupid) {
 	    global $CFG,$DB;
 	    require_once $CFG->dirroot . '/group/lib.php';
-	    debugging($this->errorlogtag." class_create_group($courseid, $groupid) started ... \n", DEBUG_DEVELOPER);
+	    debugging(self::$errorlogtag." class_create_group($courseid, $groupid) started ... \n", DEBUG_DEVELOPER);
 	    if ( ! in_array($groupid, $this->groupids) ) {
-	        trigger_error($this->errorlogtag . 'create_group: impossible groupid ('. $groupid .')');
+	        trigger_error(self::$errorlogtag . 'create_group: impossible groupid ('. $groupid .')');
 	    }
 	    $name = $DB->get_field('course', 'shortname', array('id'=>$courseid), MUST_EXIST);
 	    $data = new stdClass;
@@ -1412,7 +1410,7 @@ class enrol_oss_plugin extends enrol_plugin {
 	private function class_delete_group($courseid, $groupid) {
 	    require_once $CFG->dirroot . '/group/lib.php';
 	    if ( ! in_array($groupid, $this->groupids) ) {
-	        trigger_error($this->errorlogtag . 'delete_group: impossible groupid ('. $groupid .')');
+	        trigger_error(self::$errorlogtag . 'delete_group: impossible groupid ('. $groupid .')');
 	    }
         $group = $this->get_group($courseid, $groupid, IGNORE_MISSING);
         if ( $group ) {
@@ -1424,7 +1422,7 @@ class enrol_oss_plugin extends enrol_plugin {
 		global $CFG;
 		require_once ($CFG->libdir . '/grouplib.php');
 		if ( ! in_array($groupid, $this->groupids) ) {
-		    trigger_error($this->errorlogtag . 'class_group_is_member: impossible groupid ('. $groupid .')');
+		    trigger_error(self::$errorlogtag . 'class_group_is_member: impossible groupid ('. $groupid .')');
 		}
 		$group = $this->get_group($courseid, $groupid);
 		return groups_is_member($group->id, $userid);
@@ -1433,20 +1431,20 @@ class enrol_oss_plugin extends enrol_plugin {
 	private function class_group_add_member($courseid, $groupid, $userid) {
 	    global $CFG;
 	    require_once $CFG->dirroot . '/group/lib.php';
-	    debugging($this->errorlogtag." class_group_add_member($courseid,$groupid,$userid) started...\n", DEBUG_DEVELOPER);
+	    debugging(self::$errorlogtag." class_group_add_member($courseid,$groupid,$userid) started...\n", DEBUG_DEVELOPER);
 	    if ( ! in_array($groupid, $this->groupids) ) {
-	        trigger_error($this->errorlogtag . 'class_group_add_member: impossible groupid ('. $groupid .')');
+	        trigger_error(self::$errorlogtag . 'class_group_add_member: impossible groupid ('. $groupid .')');
 	    }
 	    $group = $this->get_group($courseid, $groupid);
 	    groups_add_member($group->id, $userid);
-	    debugging($this->errorlogtag." class_group_add_member($courseid,$groupid,$userid) ended.\n", DEBUG_DEVELOPER);
+	    debugging(self::$errorlogtag." class_group_add_member($courseid,$groupid,$userid) ended.\n", DEBUG_DEVELOPER);
 	}
 
 	private function class_group_remove_member($courseid, $groupid, $userid) {
 	    global $CFG;
 	    require_once $CFG->dirroot . '/groups/lib.php';
 	    if ( ! in_array($groupid, $this->groupids) ) {
-	        trigger_error($this->errorlogtag . 'class_group_remove_member: impossible groupid ('. $groupid .')');
+	        trigger_error(self::$errorlogtag . 'class_group_remove_member: impossible groupid ('. $groupid .')');
 	    }
 	    $group = $this->get_group($courseid, $groupid);
 	    groups_remove_member($group->id, $userid);
@@ -1465,7 +1463,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
 
         if (empty($teacher)) {
-            debugging($this->errorlogtag . 'delete_move_teacher_to_attic called with empty parameter.');
+            debugging(self::$errorlogtag . 'delete_move_teacher_to_attic called with empty parameter.');
             return false;
         }
 
@@ -1476,7 +1474,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
 
         if (!$teachercontext = context_coursecat::instance($teachercat->id)) {
-            debugging($this->errorlogtag . "delete_move_teacher_to_attic could not get category context for category $teachercat.");
+            debugging(self::$errorlogtag . "delete_move_teacher_to_attic could not get category context for category $teachercat.");
             return false;
         }
 
@@ -1492,11 +1490,11 @@ class enrol_oss_plugin extends enrol_plugin {
 
         if ($deletable) {
             $teachercat->delete_full(true);
-            debugging($this->errorlogtag."removed teacher category ".$teachercat->id, DEBUG_DEVELOPER);
+            debugging(self::$errorlogtag."removed teacher category ".$teachercat->id, DEBUG_DEVELOPER);
         }
         else {
             $teachercat->change_parent($this->attic_obj);
-            debugging($this->errorlogtag."moved teacher category ".$teachercat->id." to attic", DEBUG_DEVELOPER);
+            debugging(self::$errorlogtag."moved teacher category ".$teachercat->id." to attic", DEBUG_DEVELOPER);
         }
 
         return true;
@@ -1519,7 +1517,7 @@ class enrol_oss_plugin extends enrol_plugin {
             $property = 'name';
             $sortflag = core_collator::SORT_STRING;
             if (!core_collator::asort_objects_by_property($categories, $property, $sortflag)) {
-                debugging($this->errorlogtag . 'Sorting with asort_objects_by_property error.');
+                debugging(self::$errorlogtag . 'Sorting with asort_objects_by_property error.');
                 return false;
             }
             $count=$teacher_cat->sortorder + 1;
@@ -1545,7 +1543,7 @@ class enrol_oss_plugin extends enrol_plugin {
     private function is_ignored_teacher($name) {
         global $CFG;
         if (empty($name)) {
-        	debugging($this->errorlogtag . 'is_ignored_teacher was called with empty userid');
+        	debugging(self::$errorlogtag . 'is_ignored_teacher was called with empty userid');
         	return false;
         }
         $ignored_teachers = explode(',', $this->config->teachers_ignore);
@@ -1565,7 +1563,7 @@ class enrol_oss_plugin extends enrol_plugin {
         require_once($CFG->libdir . '/coursecatlib.php');
 
         if (empty($user->username) || empty($user->firstname) || empty($user->lastname)) {
-        	debugging($this->errorlogtag .
+        	debugging(self::$errorlogtag .
         			sprintf('teacher_add_category: data missing(userid:%s|firstname:%s|lastname:%s)',
         					$user->username, $user->firstname, $user->lastname));
         	return false;
@@ -1581,17 +1579,17 @@ class enrol_oss_plugin extends enrol_plugin {
         if ($cat_obj) {
             $coursecat = coursecat::get($cat_obj->id, MUST_EXIST, true);//alwaysreturnhidden
             $coursecat->change_parent($this->teacher_obj->id);
-            debugging($this->errorlogtag."moved teacher category ".$cat_obj->id." to teachers category", DEBUG_DEVELOPER);
+            debugging(self::$errorlogtag."moved teacher category ".$cat_obj->id." to teachers category", DEBUG_DEVELOPER);
         } else {
             $description = get_string('course_description', 'enrol_oss') . ' ' .
                     $user->firstname . ' ' .$user->lastname . '(' . $user->username . ').';
-            $cat_obj = $this->create_category($user->lastname.",".$user->firstname, $user->username,
+            $cat_obj = self::create_category($user->lastname.",".$user->firstname, $user->username,
                     $description, $this->teacher_obj->id);
             if (!$cat_obj) {
-                debugging($this->errorlogtag.'Could not create teacher category for teacher ' . $user->username);
+                debugging(self::$errorlogtag.'Could not create teacher category for teacher ' . $user->username);
                 return false;
             }
-            debugging($this->errorlogtag."created teacher category ".$cat_obj->id." for ".$user->id."(".$user->lastname.",".$user->firstname.")", DEBUG_DEVELOPER);
+            debugging(self::$errorlogtag."created teacher category ".$cat_obj->id." for ".$user->id."(".$user->lastname.",".$user->firstname.")", DEBUG_DEVELOPER);
         }
         return $cat_obj;
     }
@@ -1640,11 +1638,11 @@ class enrol_oss_plugin extends enrol_plugin {
         // Set teachers role to configured teachers course role.
         $teacherscontext = context_coursecat::instance($cat->id);
         if (!role_assign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_oss')) {
-            debugging($this->errorlogtag . 'could not assign role (' . $this->config->teachers_course_role . ') to user (' .
+            debugging(self::$errorlogtag . 'could not assign role (' . $this->config->teachers_course_role . ') to user (' .
                     $user->username . ') in context (' . $teacherscontext->id . ').');
             return false;
         }
-        debugging($this->errorlogtag."assign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
+        debugging(self::$errorlogtag."assign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
         return true;
     }
 
@@ -1669,7 +1667,7 @@ class enrol_oss_plugin extends enrol_plugin {
         // Removes teachers configured course role.
         $teacherscontext = context_coursecat::instance($cat->id);
         role_unassign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_oss');
-        debugging($this->errorlogtag."unassign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
+        debugging(self::$errorlogtag."unassign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
         return true;
     }
 
@@ -1683,11 +1681,11 @@ class enrol_oss_plugin extends enrol_plugin {
      * @return          false | object category_object
      * @uses            $DB;
      */
-    public function create_category ($name, $idnumber, $description, $parent = 0, $sortorder = 0, $visible = 1) {
+    public static function create_category ($name, $idnumber, $description, $parent = 0, $sortorder = 0, $visible = 1) {
         global $CFG,$DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
-        debugging($this->errorlogtag . sprintf("create_category... %s (%s),\n                sortorder(%s) %s",
+        debugging(self::$errorlogtag . sprintf("create_category... %s (%s),\n                sortorder(%s) %s",
                  $name, $description, $sortorder, date("H:i:s")), DEBUG_DEVELOPER);
         $data = new stdClass();
         $data->name = $name;
@@ -1701,7 +1699,7 @@ class enrol_oss_plugin extends enrol_plugin {
             return false;
         }
         if ($sortorder != 0) {
-            debugging($this->errorlogtag.'Changing course sortorder('.$sortorder.') '
+            debugging(self::$errorlogtag.'Changing course sortorder('.$sortorder.') '
                 . date("H:i:s"), DEBUG_DEVELOPER);
             $DB->set_field('course_categories', 'sortorder', $sortorder, array('id' => $cat->id));
             context_coursecat::instance($cat->id)->mark_dirty();

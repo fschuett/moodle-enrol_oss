@@ -26,6 +26,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+// parents settings page ( users -> accounts )
+if ($hassiteconfig) {
+    $ADMIN->add('accounts', new admin_externalpage('enrol_oss_parents',
+            get_string('parents_setup', 'enrol_oss'),
+            new moodle_url('/enrol/oss/parents/index.php'), 'moodle/role:assign')
+    );
+}
 
 if ($ADMIN->fulltree) {
 
@@ -215,4 +222,21 @@ if ($ADMIN->fulltree) {
         'parents of class ', PARAM_TEXT);
     $settings_class_parents_group_description->set_updatedcallback('settings_class_parents_group_description_updated');
     $settings->add($settings_class_parents_group_description);
+
+		// parents settings
+    $settings->add(new admin_setting_heading('enrol_oss_parents_settings',
+    		get_string('parents_settings','enrol_oss'),
+    		get_string('parents_settings_desc','enrol_oss')));
+    $settings->add(new admin_setting_configcheckbox('enrol_oss/parents_enabled',
+		get_string('parents_enabled', 'enrol_oss'),
+		get_string('parents_enabled_desc', 'enrol_oss'), 0));
+    if (!during_initial_install()) {
+        $options = role_get_names(null, ROLENAME_ALIAS, true);
+        //kill($options);
+        $settings->add(new admin_setting_configselect('enrol_oss/parents_role',
+            get_string('parents_role', 'enrol_oss'),
+            get_string('parents_role_desc', 'enrol_oss'), 0, $options));
+    }
+
+
 }

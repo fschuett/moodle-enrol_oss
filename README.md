@@ -31,6 +31,12 @@ There is a scheduled task available but it is deactivated by default.
 
 Activate it and schedule it for hourly execution.
 
+Parents
+-------
+To use this new feature you need to create the parent role as outlined
+in https://docs.moodle.org/34/en/Parent_role. The role shortname needs to
+match configuration on the settings page.
+
 Changelog
 ---------
 2017-11-28 add classes creation/removing and enrolment
@@ -39,4 +45,4 @@ Changelog
 2016-11-30 initial port from enrol_openlml
 
 Hildesheim, Germany
-Frank Schütte,2017(fschuett@gymhim.de)
+Frank Schütte,2018(fschuett@gymhim.de)

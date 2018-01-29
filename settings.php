@@ -30,7 +30,7 @@ defined('MOODLE_INTERNAL') || die();
 if ($hassiteconfig) {
     $ADMIN->add('accounts', new admin_externalpage('enrol_oss_parents',
             get_string('parents_setup', 'enrol_oss'),
-            new moodle_url('/enrol/oss/parents/index.php'), 'moodle/role:assign')
+            new moodle_url('/enrol/oss/parents/parents.php'), 'moodle/role:assign')
     );
 }
 

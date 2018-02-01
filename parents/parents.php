@@ -1,34 +1,42 @@
 <?php
 
-require_once('../../config.php');
+require_once('../../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
-require_once($CFG->dirroot.'/'.$CFG->admin.'/enrol/oss/parents/lib.php');
-require_once($CFG->dirroot.'/'.$CFG->admin.'/enrol/oss/parents/parents_forms.php');
+require_once($CFG->dirroot.'/admin/user/lib.php');
+require_once($CFG->dirroot.'/admin/user/user_bulk_forms.php');
+require_once($CFG->dirroot.'/enrol/oss/parents/parents_action_form.php');
+require_once($CFG->dirroot.'/enrol/oss/parents/parent_filtering.php');
+require_once($CFG->dirroot.'/enrol/oss/parents/parentslib.php');
 
-admin_externalpage_setup('parents');
+admin_externalpage_setup('enrol_oss_parents');
 
 if (!isset($SESSION->bulk_users)) {
     $SESSION->bulk_users = array();
 }
 // create the user filter form
-$ufiltering = new user_filtering();
+$ufiltering = new parent_filtering();
 
 // array of bulk operations
 // create the bulk operations form
 $action_form = new parents_action_form();
 if ($data = $action_form->get_data()) {
-    // check if an action should be performed and do so
-    switch ($data->action) {
-        case 1: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_confirm.php');
-        case 2: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_message.php');
-        case 3: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_delete.php');
-        case 4: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_display.php');
-        case 5: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_download.php');
-        case 7: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_forcepasswordchange.php');
+    if (!empty($data->updateparents)) {
+        // update parents relationships
+        parents_update_parents();
+    } else {
+        // check if an action should be performed and do so
+        switch ($data->action) {
+            case 1: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_confirm.php');
+            case 2: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_message.php');
+            case 3: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_delete.php');
+            case 4: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_display.php');
+            case 5: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_download.php');
+            case 7: redirect($CFG->wwwroot.'/'.$CFG->admin.'/user/user_bulk_forcepasswordchange.php');
+        }
     }
 }
 
-$user_bulk_form = new parents_form(null, get_selection_data($ufiltering));
+$user_bulk_form = new user_bulk_form(null, get_selection_data($ufiltering));
 
 if ($data = $user_bulk_form->get_data()) {
     if (!empty($data->addall)) {
@@ -70,7 +78,7 @@ if ($data = $user_bulk_form->get_data()) {
 
     // reset the form selections
     unset($_POST);
-    $user_bulk_form = new parents_form(null, get_selection_data($ufiltering));
+    $user_bulk_form = new user_bulk_form(null, get_selection_data($ufiltering));
 }
 // do output
 echo $OUTPUT->header();

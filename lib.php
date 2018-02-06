@@ -1496,7 +1496,6 @@ class enrol_oss_plugin extends enrol_plugin {
 	    $groupname = 'class_'.$groupid.'_group';
 	    $data->name = get_string($groupname, 'enrol_oss');
 	    $data->idnumber = $groupid;
-	    var_dump($data);
 	    $ret = groups_create_group($data);
 	    return $ret;
 	}
@@ -1717,26 +1716,26 @@ class enrol_oss_plugin extends enrol_plugin {
     }
 
     /**
-     * This function resorts the teacher categories alphabetically.
+     * This function resorts the subcategories of the given category alphabetically.
      *
      */
     private function resort_categories($id) {
         global $CFG,$DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
-        $teacher_cat = coursecat::get($id, MUST_EXIST, true); //alwaysreturnhidden
-        if (empty($teacher_cat)) {
-            debugging('Could not get teachers course category.');
+        $cat = coursecat::get($id, MUST_EXIST, true); //alwaysreturnhidden
+        if (empty($cat)) {
+            debugging("Could not get $id course category for sorting.\n");
             return false;
         }
-        if ($categories = $teacher_cat->get_children()) {
+        if ($categories = $cat->get_children()) {
             $property = 'name';
             $sortflag = core_collator::SORT_STRING;
             if (!core_collator::asort_objects_by_property($categories, $property, $sortflag)) {
                 debugging(self::$errorlogtag . 'Sorting with asort_objects_by_property error.');
                 return false;
             }
-            $count=$teacher_cat->sortorder + 1;
+            $count=$cat->sortorder + 1;
             foreach ($categories as $cat) {
                 if ($cat->sortorder != $count) {
                     $DB->set_field('course_categories', 'sortorder', $count, array('id' => $cat->id));
@@ -1745,7 +1744,7 @@ class enrol_oss_plugin extends enrol_plugin {
                 }
             }
         }
-        context_coursecat::instance($teacher_cat->id)->mark_dirty();
+        context_coursecat::instance($cat->id)->mark_dirty();
         cache_helper::purge_by_event('changesincoursecat');
         return true;
     }

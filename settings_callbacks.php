@@ -39,7 +39,6 @@ function settings_class_category_updated($full_name) {
     $classcat = enrol_oss_plugin::get_class_category($config);
     if ( $classcat ) {
         $classcat->update(array('name'=>$config->class_category));
-        var_dump($classcat);
     }
 }
 

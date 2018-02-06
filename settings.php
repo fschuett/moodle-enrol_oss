@@ -117,6 +117,9 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_heading('enrol_oss_students_settings',
             get_string('students_settings', 'enrol_oss'),
     		get_string('students_settings_desc', 'enrol_oss')));
+    $settings->add(new admin_setting_configtext('enrol_oss/students_group_name',
+            get_string('students_group_name','enrol_oss'),
+            get_string('students_group_name_desc', 'enrol_oss'), 'STUDENTS'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/student_class_numbers',
             get_string('student_class_numbers_key', 'enrol_oss'),
             get_string('student_class_numbers', 'enrol_oss'), '05,06,07,08,09,10,11,12,EXTRA'));
@@ -230,6 +233,12 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configcheckbox('enrol_oss/parents_enabled',
 		get_string('parents_enabled', 'enrol_oss'),
 		get_string('parents_enabled_desc', 'enrol_oss'), 0));
+    $settings->add(new admin_setting_configcheckbox('enrol_oss/parents_autocreate',
+		get_string('parents_autocreate', 'enrol_oss'),
+		get_string('parents_autocreate_desc', 'enrol_oss'), 0));
+    $settings->add(new admin_setting_configcheckbox('enrol_oss/parents_autoremove',
+		get_string('parents_autoremove', 'enrol_oss'),
+		get_string('parents_autoremove_desc', 'enrol_oss'), 0));
     if (!during_initial_install()) {
         $options = role_get_names(null, ROLENAME_ALIAS, true);
         //kill($options);
@@ -237,6 +246,12 @@ if ($ADMIN->fulltree) {
             get_string('parents_role', 'enrol_oss'),
             get_string('parents_role_desc', 'enrol_oss'), 0, $options));
     }
-
-
+    $settings->add(new admin_setting_configtext('enrol_oss/parents_prefix',
+        get_string('parents_prefix', 'enrol_oss'),
+        get_string('parents_prefix_desc', 'enrol_oss'),
+        'eltern_', PARAM_TEXT));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/parents_child_attribute',
+        get_string('parents_child_attribute', 'enrol_oss'),
+        get_string('parents_child_attribute_desc', 'enrol_oss'),
+        'uniqueIdentifier', PARAM_TEXT));
 }

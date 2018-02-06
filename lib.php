@@ -483,6 +483,64 @@ class enrol_oss_plugin extends enrol_plugin {
         return $groups;
     }
 
+
+    /**
+     * Function to collect students parents_child_attribute from ldap
+	 *
+     * on success:
+     * @return array(attr#1 => uid#1, ...)
+     * on failure:
+     * @return false
+     */
+    private function ldap_get_children() {
+        global $CFG, $DB;
+
+        debugging(self::$errorlogtag.'ldap_get_children... started '.date("H:i:s"),
+            DEBUG_DEVELOPER);
+        if (!isset($authldap) or empty($authldap)) {
+            $authldap = get_auth_plugin('ldap');
+        }
+        $ldapconnection = $this->ldap_connect_ul($authldap);
+        $fresult = array ();
+        if (!$ldapconnection) {
+            return FALSE;
+        }
+        $filter = '(role=students*)';
+        $contexts = explode(';', $authldap->config->contexts);
+        foreach ($contexts as $context) {
+            $context = trim($context);
+            if (empty ($context)) {
+                continue;
+            }
+
+            if ($authldap->config->search_sub) {
+                // Use ldap_search to find first child from subtree.
+                $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
+                    $this->config->parents_child_attribute, 'uid'
+                ));
+            } else {
+                // Search only in this context.
+                $ldap_result = ldap_list($ldapconnection, $context, $filter, array (
+                    $this->config->parents_child_attribute, 'uid'
+                ));
+            }
+
+            $children = ldap_get_entries($ldapconnection, $ldap_result);
+            // Add found children to list.
+            for ($i = 0; $i < count($children) - 1; $i++) {
+                if(array_key_exists($this->config->parents_child_attribute, $children[$i])) {
+                    $fresult[$children[$i][$this->config->parents_child_attribute][0]] = 
+                            $children[$i]['uid'][0];
+				} else {
+				    debugging(self::$errorlogtag."ldap_get_children(): entry ".$children[$i]['uid'][0]." has no  attribute ".$this->config->parents_child_attribute."\n");
+				}
+            }
+        }
+        $authldap->ldap_close();
+        return $fresult;
+    }
+
+
     /**
      * return all groups from LDAP which match search criteria defined in settings
 	 *
@@ -837,6 +895,7 @@ class enrol_oss_plugin extends enrol_plugin {
         global $CFG;
 
         $pattern[] = '(' . $this->config->attribute . '=' . $this->config->teachers_group_name .')';
+        $pattern[] = '(' . $this->config->attribute . '=' . $this->config->students_group_name .')';
         if (!empty($this->config->prefix_teacher_members)) {
             $classes = explode(',', $this->config->prefix_teacher_members);
             foreach ($classes as $c) {
@@ -1203,9 +1262,9 @@ class enrol_oss_plugin extends enrol_plugin {
 			return;
 		}
 		$mdl_classes = $this->get_classes_moodle();
-		var_dump($mdl_classes);
 		foreach($mdl_classes as $class => $course) {
 			$ldap_members = $this->ldap_get_group_members($class, true);
+			$ldap_members = $ldap_members + $this->get_class_parents($class);
 			$context = context_course::instance($course->id);
 			$enrol_instance = $this->get_enrol_instance($course);
 			if (!$enrol_instance) {
@@ -1223,17 +1282,18 @@ class enrol_oss_plugin extends enrol_plugin {
 			$to_enrol_students = array();
 			$to_enrol_parents = array();
 			foreach($to_enrol as $user) {
-			    $groupid = $this->get_groupid($user);
-			    switch ( $groupid ) {
-			        case 'teachers':
-			            $to_enrol_teachers[] = $user;
-			            break;
-			        case 'students':
-			            $to_enrol_students[] = $user;
-			            break;
-			        case 'parents':
-			            $to_enrol_parents[] = $user;
-			            break;
+			    if ( $groupid = $this->get_groupid($user) ) {
+			        switch ( $groupid ) {
+			            case 'teachers':
+			                $to_enrol_teachers[] = $user;
+			                break;
+			            case 'students':
+			                $to_enrol_students[] = $user;
+			                break;
+			            case 'parents':
+			                $to_enrol_parents[] = $user;
+			                break;
+					}
 			    }
 			}
 			if (!empty($to_enrol) || !empty($to_unenrol)) {
@@ -1247,6 +1307,9 @@ class enrol_oss_plugin extends enrol_plugin {
 			if (!empty($to_enrol_students)) {
 				$this->class_enrol($course, $enrol_instance, $to_enrol_students, $this->config->class_students_role);
 			}
+			if (!empty($to_enrol_parents)) {
+			    $this->class_enrol($course, $enrol_instance, $to_enrol_parents, $this->config->class_parents_role);
+            }
 			if (!empty($to_unenrol)) {
 				$this->class_unenrol($course, $enrol_instance, $to_unenrol);
 			}
@@ -1256,6 +1319,28 @@ class enrol_oss_plugin extends enrol_plugin {
 		}
 	}
 
+	function get_class_parents($class = null) {
+	    global $DB;
+	    
+        if( $class == null ){
+            debugging(self::$errorlogtag . "get_class_parents(null) called!\n");
+            return array();
+        }
+        $sql = "SELECT p.id AS id, p.username AS username
+                   FROM {user} p
+                   JOIN {role_assignments} ra ON p.id = ra.userid
+                   JOIN {context} cx ON ra.contextid = cx.id
+                   JOIN {cohort_members} cm ON cm.userid = cx.instanceid
+                   JOIN {cohort} c ON cm.cohortid = c.id
+                   WHERE cx.contextlevel=30 AND c.idnumber like '" . $class . "'";
+        $result = $DB->get_records_sql($sql, array());
+        $ret = array();
+        foreach($result as $id => $user) {
+            $ret[$id] = $user->username;
+        }
+        return $ret;
+	}
+	
 	function class_enrol($course, $enrol_instance, $users, $role) {
 		global $DB;
 		if (!is_array($users)) {
@@ -1267,7 +1352,13 @@ class enrol_oss_plugin extends enrol_plugin {
 						'auth' => 'ldap'
 				) );
 			if (!$user) {
-				debugging ( self::$errorlogtag . "class_enrol($username) not found in ldap!");
+			    $user = $DB->get_record ( 'user', array (
+						'username' => $username,
+						'auth' => 'manual'
+				) );
+			}
+			if (!$user) {
+				debugging ( self::$errorlogtag . "class_enrol($username) not found in ldap and not in manual users!");
 				continue;
 			}
 			$this->enrol_user($enrol_instance, $user->id, $role);
@@ -1305,10 +1396,11 @@ class enrol_oss_plugin extends enrol_plugin {
 	private function sync_user_groups($userid, $classes) {
 	    global $CFG;
 	    require_once $CFG->libdir . '/enrollib.php';
-	    $groupid = $this->get_groupid($userid);
-	    foreach($classes as $courseid => $course) {
-	        if ( ! $this->class_group_is_member($courseid, $groupid, $userid) ) {
-	            $this->class_group_add_member($courseid, $groupid, $userid);
+	    if ( $groupid = $this->get_groupid($userid) ) {
+	        foreach($classes as $courseid => $course) {
+	            if ( ! $this->class_group_is_member($courseid, $groupid, $userid) ) {
+	                $this->class_group_add_member($courseid, $groupid, $userid);
+				}
 	        }
 	    }
 	}
@@ -1322,33 +1414,33 @@ class enrol_oss_plugin extends enrol_plugin {
 	    require_once $CFG->libdir . '/enrollib.php';
 	    debugging(self::$errorlogtag." sync_class_groups($courseid) started...\n", DEBUG_DEVELOPER);
 	    $context = context_course::instance($courseid);
-	    $users = get_enrolled_users($context);
+	    $users = array_keys(get_enrolled_users($context));
 	    $teachers = array();
 	    $students = array();
 	    $parents = array();
 	    if ( $group = $this->get_group($courseid, 'teachers') ) {
-            $teachers = get_enrolled_users($context, '', $group->id);
+            $teachers = array_keys(get_enrolled_users($context, '', $group->id));
 	    }
 	    if ( $group = $this->get_group($courseid, 'students') ) {
-            $students = get_enrolled_users($context, '', $group->id);
+            $students = array_keys(get_enrolled_users($context, '', $group->id));
 	    }
 	    if ( $group = $this->get_group($courseid, 'parents') ) {
-            $parents = get_enrolled_users($context, '', $group->id);
+            $parents = array_keys(get_enrolled_users($context, '', $group->id));
 	    }
-	    $users = array_diff_key($users, $teachers, $students, $parents);
-        foreach($users as $userid => $user) {
-        	$groupid = $this->get_groupid($userid);
-        	$this->class_group_add_member($courseid, $groupid, $userid);
+	    $users = array_diff($users, $teachers, $students, $parents);
+        foreach($users as $key => $userid) {
+        	if( $groupid = $this->get_groupid($userid) ) {
+				$this->class_group_add_member($courseid, $groupid, $userid);
     	    }
-    	    debugging(self::$errorlogtag." sync_class_groups($courseid) ended.\n", DEBUG_DEVELOPER);
+		}
+		debugging(self::$errorlogtag." sync_class_groups($courseid) ended.\n", DEBUG_DEVELOPER);
 	}
 
 	/*
-	 * return the groupid, the user can possibly be member of
-	 * FIXME: This is very weak criteria.
+	 * return the groupid, the user can possibly be member of or false
 	 *
 	 * @param $userid id of the user
-	 * @return $string groupid name
+	 * @return $string|false groupid name
 	 *
 	 */
 	private function get_groupid($userid) {
@@ -1362,13 +1454,15 @@ class enrol_oss_plugin extends enrol_plugin {
 	    if( $this->is_teacher($username) ) {
 		debugging(self::$errorlogtag." get_groupid($username) returns: teachers\n", DEBUG_DEVELOPER);
 	        return 'teachers';
-	    }
-	    if ( $DB->record_exists('user', array('username' => $username, 'auth' => 'ldap')) ) {
+	    } else if ( $DB->record_exists('user', array('username' => $username, 'auth' => 'ldap')) ) {
 		debugging(self::$errorlogtag." get_groupid($username) returns: students\n", DEBUG_DEVELOPER);
 	        return 'students';
-	    }
-	    debugging(self::$errorlogtag." get_groupid($username) returns: parents\n", DEBUG_DEVELOPER);
-	    return 'parents';
+	    } else if ( strpos($username, 'eltern_') === 0 ) {
+	        debugging(self::$errorlogtag." get_groupid($username) returns: parents\n", DEBUG_DEVELOPER);
+	        return 'parents';
+		} else {
+		    return false;
+		}
 	}
 
 	private function get_group($courseid, $groupid, $options = IGNORE_MULTIPLE) {
@@ -1449,6 +1543,128 @@ class enrol_oss_plugin extends enrol_plugin {
 	    $group = $this->get_group($courseid, $groupid);
 	    groups_remove_member($group->id, $userid);
 	}
+	
+	
+    /*------------------------------------------------------
+     * parents functions
+     * -----------------------------------------------------
+     */
+
+	/**
+	 * This function reads parents_child_attribute and username from ldap and 
+	 * user id from moodle user database and returns an array indexed with the ldap attribute.
+	 *
+	 * @return array (attr#1 => uid#1, attr#2 => uid#2, ...)
+	 */
+	private function parents_get_children_uids() {
+	    global $DB;
+	    $ldap_students = $this->ldap_get_children();
+        $studentgroup = $this->get_cohort_id($this->config->students_group_name);
+        $result = $this->get_cohort_members($studentgroup);
+        $mdl_students = array();
+        foreach($result as $key => $obj) {
+            $mdl_students[$obj->username] = $obj->id;
+		}
+        $result = array();
+        foreach( $ldap_students as $attr => $uid ) {
+            $result[$attr] = $mdl_students[$uid];
+        }
+        return $result;
+	}
+	
+	/**
+	 * This function adds the parent -> child relation to moodle database.
+	 *
+	 * @param $parent - user id of the parent
+	 * @param $child  - user id of the child
+	 * @return true   - success, false otherwise
+	 */
+	 private function parents_add_relationship($parent, $child) {
+	     if( empty($parent) or empty($child) or $parent == 0 or $child == 0) { 
+             debugging(self::$errorlogtag . "parents_add_relationship(parent=$parent,child=$child) - ungültige Werte\n");
+             return false;
+		 }
+	     $context = context_user::instance($child);
+	     $roleid = $this->config->parents_role;
+	     role_assign($roleid, $parent, $context, 'enrol_oss');
+	 }
+	 
+	/**
+	 * This function removes the parent -> child relation from moodle database.
+	 *
+	 * @param $parent - user id of the parent
+	 * @param $child  - user id of the child
+	 * @return true   - success, false otherwise
+	 */
+	 private function parents_remove_relationship($parent, $child) {
+	     if( empty($parent) or empty($child) or $parent == 0 or $child == 0) { 
+             debugging(self::$errorlogtag . "parents_add_relationship(parent=$parent,child=$child) - ungültige Werte\n");
+             return false;
+		 }
+	     $context = context_user::instance($child);
+	     $roleid = $this->config->parents_role;
+	     role_unassign($roleid, $parent, $context, 'enrol_oss');
+	 }
+	 
+	 
+	/**
+	 * This function creates / removes relationships between parents and children.
+	 * The parents are identified by parents_prefix and the matching child is found
+	 * from parents_child_attribute in ldap structure following the prefix.
+	 */
+	public function parents_sync_relationships() {
+	    global $DB, $CFG;
+	    $sql = "id<>".$CFG->siteguest." AND deleted<>1 AND auth='manual'"
+	                ." AND username LIKE '".$this->config->parents_prefix."%'";
+	    $rs = $DB->get_recordset_select('user', $sql, array(), 
+	                'username', 'username,id');
+        $parents = array();
+		foreach( $rs as $user ) {
+		    $childid = substr($user->username, strlen($this->config->parents_prefix));
+		    $parents[$childid] = $user->id;
+		}
+		$children = $this->parents_get_children_uids();
+		$orphans = array_diff( array_keys ( $children ) , array_keys ( $parents ) );
+		$childless = array_diff( array_keys( $parents ), array_keys( $children ));
+		if( $this->config->parents_autocreate ) {
+		    // foreach $orphan create parent and modify $parents
+		}
+		if( $this->config->parents_autoremove ) {
+		    // foreach $childless remove parent and modify $parents
+        }
+        // sync relations beween parents and children
+        $relation_to_be = array_intersect( array_keys( $parents ), array_keys( $children ));
+		$sql = "SELECT userid AS parentid, instanceid AS childid
+                     FROM {role_assignments}
+                     JOIN {context} ON {context}.id = {role_assignments}.contextid
+                     WHERE contextlevel=".CONTEXT_USER." AND roleid=".$this->config->parents_role;
+		$records = $DB->get_records_sql($sql);
+		$relations = array();
+		foreach( $records as $record ) {
+		    $relations[$record->parentid] = $record->childid;
+		}
+		$to_create = array_diff( $parents, array_keys( $relations ));
+		$to_delete = array_diff( array_keys( $relations ), $parents );
+		foreach( $to_create as $attr => $id ) {
+		    if(array_key_exists($attr, $children)) {
+		        $this->parents_add_relationship($id, $children[$attr]);
+			} else {
+			    debugging(self::$errorlogtag."parents_sync_relationships(): children array has no key $attr.\n");
+			}
+        }
+        foreach( $to_delete as $attr => $parentid ) {
+		    if(array_key_exists($attr, $children)) {
+                $this->parents_remove_relationship($parentid, $children[$attr]);
+			} else {
+			    debugging(self::$errorlogtag."parents_sync_relationships(): children array has no key $attr.\n");
+			}
+        }
+	}
+	
+    /*------------------------------------------------------
+     * teachers functions
+     * -----------------------------------------------------
+     */
     /**
      * This function deletes an empty teacher category or moves it to attic if not empty.
      * @uses $CFG;

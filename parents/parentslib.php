@@ -1,4 +1,7 @@
 <?php
+# debug function
+function kill($data){ var_dump($data); exit; }
+@ini_set('display_errors','1');
 
 require_once($CFG->dirroot.'/user/filters/lib.php');
 
@@ -20,6 +23,31 @@ function add_selection_all($ufiltering) {
     $rs->close();
 }
 
+function format_parents_select_menu ($parents) {
+    global $DB;
+    $keys = array_keys($parents);
+    list($in, $params) = $DB->get_in_or_equal($keys);
+    $sqlwhere = "p.id $in";
+	$sql = "SELECT p.id AS id,".$DB->sql_concat(
+	                    $DB->sql_fullname('p.firstname', 'p.lastname'),"'('", 
+	                    $DB->sql_fullname('ch.firstname', 'ch.lastname'),"')'")." AS fullname
+                        FROM {user} p
+                        JOIN {role_assignments} ra ON p.id = ra.userid
+                        JOIN {context} cx ON ra.contextid = cx.id
+                        JOIN {user} ch ON ch.id = cx.instanceid
+                        WHERE cx.contextlevel=". CONTEXT_USER ." AND $sqlwhere
+                        ORDER BY fullname";
+	if ($records = $DB->get_records_sql($sql, $params, 0, MAX_BULK_USERS)) {
+		foreach ($records as $record) {
+			$record = (array)$record;
+			$key   = array_shift($record);
+			$value = array_shift($record);
+			$menu[$key] = $value;
+		}
+	}
+	return $menu;
+}
+
 function get_selection_data($ufiltering) {
     global $SESSION, $DB, $CFG;
 
@@ -31,8 +59,8 @@ function get_selection_data($ufiltering) {
     $scount = count($SESSION->bulk_users);
 
     $userlist = array('acount'=>$acount, 'scount'=>$scount, 'ausers'=>false, 'susers'=>false, 'total'=>$total);
-    $userlist['ausers'] = $DB->get_records_select_menu('user', $sqlwhere, $params, 'fullname', 
-        'id,'.$DB->sql_concat($DB->sql_fullname(),'(',')').' AS fullname', 0, MAX_BULK_USERS);
+    $userlist['ausers'] = format_parents_select_menu($DB->get_records_select_menu('user', $sqlwhere, $params, 'fullname', 
+        'id,'.$DB->sql_fullname().' AS fullname', 0, MAX_BULK_USERS));
 
     if ($scount) {
         if ($scount < MAX_BULK_USERS) {
@@ -41,8 +69,8 @@ function get_selection_data($ufiltering) {
             $bulkusers = array_slice($SESSION->bulk_users, 0, MAX_BULK_USERS, true);
         }
         list($in, $inparams) = $DB->get_in_or_equal($bulkusers);
-        $userlist['susers'] = $DB->get_records_select_menu('user', "id $in", $inparams, 'fullname', 
-            'id,'.$DB->sql_concat($DB->sql_fullname(),'(',')').' AS fullname');
+        $userlist['susers'] = format_parents_select_menu($DB->get_records_select_menu('user', "id $in", $inparams, 'fullname', 
+            'id,'.$DB->sql_fullname().' AS fullname'));
     }
 
     return $userlist;

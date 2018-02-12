@@ -22,6 +22,9 @@ if ($data = $action_form->get_data()) {
     if (!empty($data->updateparents)) {
         // update parents relationships
         parents_update_parents();
+	} else if (!empty($data->dosetpassword)) {
+	    // update selected users passwords
+		redirect(new moodle_url($CFG->wwwroot.'/enrol/oss/parents/parents_set_passwords.php', array('newpassword' => $data->newpassword)));
     } else {
         // check if an action should be performed and do so
         switch ($data->action) {

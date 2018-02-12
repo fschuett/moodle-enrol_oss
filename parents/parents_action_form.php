@@ -32,8 +32,16 @@ class parents_action_form extends moodleform {
         $objs[] =& $mform->createElement('submit', 'doaction', get_string('go'));
         $mform->addElement('group', 'actionsgrp', get_string('withselectedusers'), $objs, ' ', false);
         $objs = array();
-        $objs[] =& $mform->createElement('submit', 'updateparents', get_string('parents_update','enrol_oss'));
-        $mform->addElement('group','parentsgrp', get_string('parents_update_label', 'enrol_oss'), $objs, ' ', false);
+        $objs[] =& $mform->createElement('text', 'newpassword', null);
+        $mform->setType('newpassword', PARAM_TEXT);
+        $objs[] =& $mform->createElement('submit', 'dosetpassword', get_string('parents_set_password', 'enrol_oss'));
+        $mform->addGroup($objs, 'passwordgrp', get_string('withselectedusers'), ' ', false);
+
+        $objs = array();
+        $objs[] =& $mform->createElement('static', 'parents_update_info', get_string('parents_all_label', 'enrol_oss'), get_string('parents_update_desc', 'enrol_oss'));
+        $objs[] =& $mform->createElement('submit', 'updateparents', get_string('go'));
+        $mform->addElement('group','parentsgrp', get_string('parents_all_label', 'enrol_oss'), $objs, ' ', false);
+
     }
 }
 

@@ -39,7 +39,16 @@ $tasks = array(
         'blocking' => 0,
         'minute' => '17',
         'hour' => '22',
-        'day' => '*',
+        'day' => '9',
+        'dayofweek' => '*',
+        'month' => '*'
+    ),
+    array(
+        'classname' => '\enrol_oss\task\oss_sync_parents_task',
+        'blocking' => 0,
+        'minute' => '31',
+        'hour' => '21',
+        'day' => '11',
         'dayofweek' => '*',
         'month' => '*'
     )

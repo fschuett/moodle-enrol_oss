@@ -13,6 +13,9 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+# debug function
+function kill($data){ var_dump($data); exit; }
+@ini_set('display_errors','1');
 
 /**
  * OSS enrolment plugin implementation.
@@ -1617,7 +1620,7 @@ class enrol_oss_plugin extends enrol_plugin {
 	                ." AND username LIKE '".$this->config->parents_prefix."%'";
 	    $rs = $DB->get_recordset_select('user', $sql, array(), 
 	                'username', 'username,id');
-        $parents = array();
+	    $parents = array();
 		foreach( $rs as $user ) {
 		    $childid = substr($user->username, strlen($this->config->parents_prefix));
 		    $parents[$childid] = $user->id;
@@ -1630,9 +1633,9 @@ class enrol_oss_plugin extends enrol_plugin {
 		}
 		if( $this->config->parents_autoremove ) {
 		    // foreach $childless remove parent and modify $parents
-        }
-        // sync relations beween parents and children
-        $relation_to_be = array_intersect( array_keys( $parents ), array_keys( $children ));
+		}
+		// sync relations beween parents and children
+		$relation_to_be = array_intersect( array_keys( $parents ), array_keys( $children ));
 		$sql = "SELECT userid AS parentid, instanceid AS childid
                      FROM {role_assignments}
                      JOIN {context} ON {context}.id = {role_assignments}.contextid
@@ -1647,17 +1650,17 @@ class enrol_oss_plugin extends enrol_plugin {
 		foreach( $to_create as $attr => $id ) {
 		    if(array_key_exists($attr, $children)) {
 		        $this->parents_add_relationship($id, $children[$attr]);
-			} else {
-			    debugging(self::$errorlogtag."parents_sync_relationships(): children array has no key $attr.\n");
-			}
-        }
-        foreach( $to_delete as $attr => $parentid ) {
+		    } else {
+			debugging(self::$errorlogtag."parents_sync_relationships(): children array has no key $attr.\n");
+		    }
+		}
+		foreach( $to_delete as $attr => $parentid ) {
 		    if(array_key_exists($attr, $children)) {
-                $this->parents_remove_relationship($parentid, $children[$attr]);
-			} else {
-			    debugging(self::$errorlogtag."parents_sync_relationships(): children array has no key $attr.\n");
-			}
-        }
+			$this->parents_remove_relationship($parentid, $children[$attr]);
+		    } else {
+			debugging(self::$errorlogtag."parents_sync_relationships(): children array has no key $attr.\n");
+		    }
+		}
 	}
 	
     /*------------------------------------------------------

@@ -1,7 +1,4 @@
 <?php
-# debug function
-function kill($data){ var_dump($data); exit; }
-@ini_set('display_errors','1');
 
 require_once($CFG->dirroot.'/user/filters/lib.php');
 

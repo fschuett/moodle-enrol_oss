@@ -114,7 +114,6 @@ class parent_filtering extends user_filtering {
      * Print the add filter form.
      */
     public function display_add() {
-        //kill($this->_addform);
         $this->_addform->display();
     }
 

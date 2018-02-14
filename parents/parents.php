@@ -33,7 +33,7 @@ require_once($CFG->dirroot.'/enrol/oss/parents/parentslib.php');
 
 admin_externalpage_setup('enrol_oss_parents');
 
-$parents_enabled = get_config('parents_enabled', 'enrol_oss');
+$parents_enabled = get_config('enrol_oss', 'parents_enabled');
 
 if( $parents_enabled )  {
     if (!isset($SESSION->bulk_users)) {

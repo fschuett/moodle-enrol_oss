@@ -1332,7 +1332,7 @@ class enrol_oss_plugin extends enrol_plugin {
                    JOIN {context} cx ON ra.contextid = cx.id
                    JOIN {cohort_members} cm ON cm.userid = cx.instanceid
                    JOIN {cohort} c ON cm.cohortid = c.id
-                   WHERE cx.contextlevel=30 AND c.idnumber like '" . $class . "'";
+                   WHERE cx.contextlevel=" . CONTEXT_USER . " AND c.idnumber like '" . $class . "'";
         $result = $DB->get_records_sql($sql, array());
         $ret = array();
         foreach($result as $id => $user) {

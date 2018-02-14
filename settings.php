@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * OML enrolment plugin settings and presets.
+ * OSS enrolment plugin settings and presets.
  *
  * @package    enrol
  * @subpackage oss
@@ -241,7 +241,6 @@ if ($ADMIN->fulltree) {
 		get_string('parents_autoremove_desc', 'enrol_oss'), 0));
     if (!during_initial_install()) {
         $options = role_get_names(null, ROLENAME_ALIAS, true);
-        //kill($options);
         $settings->add(new admin_setting_configselect('enrol_oss/parents_role',
             get_string('parents_role', 'enrol_oss'),
             get_string('parents_role_desc', 'enrol_oss'), 0, $options));

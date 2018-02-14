@@ -1,4 +1,30 @@
 <?php
+// This file is part of Moodle - http://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
+/**
+ * OSS parents lib.
+ *
+ * @package    enrol
+ * @subpackage oss
+ * @author     Frank Schütte
+ * @copyright  2018 Frank Schütte <fschuett@gymhim.de>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/user/filters/lib.php');
 
@@ -22,25 +48,30 @@ function add_selection_all($ufiltering) {
 
 function format_parents_select_menu ($parents) {
     global $DB;
-    $keys = array_keys($parents);
-    list($in, $params) = $DB->get_in_or_equal($keys);
-    $sqlwhere = "p.id $in";
-	$sql = "SELECT p.id AS id,".$DB->sql_concat(
-	                    $DB->sql_fullname('p.firstname', 'p.lastname'),"'('", 
-	                    $DB->sql_fullname('ch.firstname', 'ch.lastname'),"')'")." AS fullname
-                        FROM {user} p
-                        JOIN {role_assignments} ra ON p.id = ra.userid
-                        JOIN {context} cx ON ra.contextid = cx.id
-                        JOIN {user} ch ON ch.id = cx.instanceid
-                        WHERE cx.contextlevel=". CONTEXT_USER ." AND $sqlwhere
-                        ORDER BY fullname";
-	if ($records = $DB->get_records_sql($sql, $params, 0, MAX_BULK_USERS)) {
-		foreach ($records as $record) {
-			$record = (array)$record;
-			$key   = array_shift($record);
-			$value = array_shift($record);
-			$menu[$key] = $value;
-		}
+    $menu = array();
+    if( !empty($parents) ) {
+        $keys = array_keys($parents);
+        list($in, $params) = $DB->get_in_or_equal($keys);
+        $sqlwhere = "p.id $in";
+        $sql = "SELECT p.id AS id,".$DB->sql_concat(
+                            $DB->sql_fullname('p.firstname', 'p.lastname'),"'('", 
+                            "(
+                                SELECT ".$DB->sql_fullname('ch.firstname', 'ch.lastname')." FROM {user} ch
+                                JOIN {context} cx ON ch.id = cx.instanceid
+                                JOIN {role_assignments} ra ON ra.contextid = cx.id
+                                WHERE cx.contextlevel=".CONTEXT_USER." AND ra.userid = p.id
+                            )"
+                            ,"')'")." AS fullname
+                            FROM {user} p WHERE $sqlwhere
+                            ORDER BY fullname";
+        if ($records = $DB->get_records_sql($sql, $params, 0, MAX_BULK_USERS)) {
+            foreach ($records as $record) {
+                $record = (array)$record;
+                $key   = array_shift($record);
+                $value = array_shift($record);
+                $menu[$key] = $value;
+            }
+        }
 	}
 	return $menu;
 }

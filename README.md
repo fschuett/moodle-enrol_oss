@@ -39,13 +39,15 @@ match configuration on the settings page.
 
 The parents can be imported from file, which needs to be of certain structure.
 
-username;lastname;firstname;idnumber;email
+username;lastname;firstname;email
 
 E-Mail can be fake mail with example.com but needs to be unique, f.e.
 "nobody####@example.com" with student no. ####.
 There is a patch discussed on https://moodle.org/mod/forum/discuss.php?d=96114
 which makes non unique email addresses possible.
 This patch is very helpful, because parents of siblings get multiple parent accounts.
+In newer moodle versions there is the setting "allowaccountssmaeemail", which
+reduces the mentioned patch to the file emailupdate.php.
 
 username must be "eltern_####", where #### is the student no. in ldap structure.
 

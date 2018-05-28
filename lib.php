@@ -1167,7 +1167,13 @@ class enrol_oss_plugin extends enrol_plugin {
 				debugging(self::$errorlogtag . "create_class ($class) fehlgeschlagen: ".$e->getMessage()."\n");
 			}
 		} else {
-			$course = duplicate_course($template, $fullname, $class, $catid, 1);
+			debugging(self::$errorlogtag . "duplicate_course(".$template.",".$fullname.",".$class.",".$catid.")\n");
+			try {
+				$course = core_course_external::duplicate_course($template, $fullname, $class, $catid, 1);
+				debugging(self::$errorlogtag . "duplicate_course(".$fullname." completed\n");
+			} catch ( Exception $e ) {
+				debugging(self::$errorlogtag . "duplicate_course ($class) fehlgeschlagen: ".$e->getMessage()."\n");
+			}
 		}
 	}
 

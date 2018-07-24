@@ -42,6 +42,8 @@ class enrol_oss_plugin extends enrol_plugin {
     protected $teacher_obj;
     protected $attic_obj;
     protected $class_obj;
+    protected $userid_regex;
+
 
     /**
      * constructor since php5
@@ -497,23 +499,23 @@ class enrol_oss_plugin extends enrol_plugin {
 
         debugging(self::$errorlogtag.'ldap_get_children... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        if (!isset($authldap) or empty($authldap)) {
-            $authldap = get_auth_plugin('ldap');
+        if (!isset($this->authldap) or empty($this->authldap)) {
+            $this->authldap = get_auth_plugin('ldap');
         }
-        $ldapconnection = $this->ldap_connect_ul($authldap);
+        $ldapconnection = $this->ldap_connect_ul($this->authldap);
         $fresult = array ();
         if (!$ldapconnection) {
             return FALSE;
         }
         $filter = '(role=students*)';
-        $contexts = explode(';', $authldap->config->contexts);
+        $contexts = explode(';', $this->authldap->config->contexts);
         foreach ($contexts as $context) {
             $context = trim($context);
             if (empty ($context)) {
                 continue;
             }
 
-            if ($authldap->config->search_sub) {
+            if ($this->authldap->config->search_sub) {
                 // Use ldap_search to find first child from subtree.
                 $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
                     $this->config->parents_child_attribute, 'uid'
@@ -536,7 +538,7 @@ class enrol_oss_plugin extends enrol_plugin {
 				}
             }
         }
-        $authldap->ldap_close();
+        $this->authldap->ldap_close();
         return $fresult;
     }
 
@@ -560,12 +562,12 @@ class enrol_oss_plugin extends enrol_plugin {
 
         debugging(self::$errorlogtag.'ldap_get_grouplist... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        if (!isset($authldap) or empty($authldap)) {
-            $authldap = get_auth_plugin('ldap');
+        if (!isset($this->authldap) or empty($this->authldap)) {
+            $this->authldap = get_auth_plugin('ldap');
         }
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $ldapconnection = $this->ldap_connect_ul($authldap);
+        $ldapconnection = $this->ldap_connect_ul($this->authldap);
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $fresult = array ();
@@ -588,7 +590,7 @@ class enrol_oss_plugin extends enrol_plugin {
                 continue;
             }
 
-            if ($authldap->config->search_sub) {
+            if ($this->authldap->config->search_sub) {
                 // Use ldap_search to find first group from subtree.
                 $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
                     $this->config->attribute
@@ -609,7 +611,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_close '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $authldap->ldap_close();
+        $this->authldap->ldap_close();
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_closed '.date("H:i:s"),
             DEBUG_DEVELOPER);
         // Remove teachers from all but teachers groups.
@@ -634,12 +636,12 @@ class enrol_oss_plugin extends enrol_plugin {
             DEBUG_DEVELOPER);
         $ret = array ();
         $members = array ();
-        if (!isset($authldap) or empty($authldap)) {
+        if (!isset($this->authldap) or empty($authldap)) {
             $authldap = get_auth_plugin('ldap');
         }
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $ldapconnection = $this->ldap_connect_ul($authldap);
+        $ldapconnection = $this->ldap_connect_ul($this->authldap);
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
 
@@ -677,9 +679,11 @@ class enrol_oss_plugin extends enrol_plugin {
                             date("H:i:s")), DEBUG_DEVELOPER);
                     for ($g = 0; $g < (count($entries[0][$this->config->member_attribute]) - 1); $g++) {
                         $member = trim($entries[0][$this->config->member_attribute][$g]);
+                        debugging(self::$errorlogtag . sprintf('ldap_get_group_members... found member=%s', $member), DEBUG_DEVELOPER);
                         if ($this->config->member_attribute_isdn) {
                     	    $member = $this->userid_from_dn($member);
                     	}
+                        debugging(self::$errorlogtag . sprintf('ldap_get_group_members... member cn=%s', $member), DEBUG_DEVELOPER);
                         if ($member != "" AND ($teachers_ok OR !$this->is_teacher($member))) {
                             $members[] = $member;
                         }
@@ -689,7 +693,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         debugging(self::$errorlogtag.'ldap_get_group_members... ldap_close '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $authldap->ldap_close();
+        $this->authldap->ldap_close();
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_closed '.date("H:i:s"),
             DEBUG_DEVELOPER);
         foreach ($members as $member) {
@@ -1933,7 +1937,15 @@ class enrol_oss_plugin extends enrol_plugin {
 	if ($dn == '') {
 		return '';
 	}
-	if (preg_match("/^uid=([^,]+),/", $dn, $matches)) {
+        if (!isset($this->userid_regex) or empty($this->userid_regex)) {
+    	    if (!isset($this->authldap) or empty($this->authldap)) {
+        	$this->authldap = get_auth_plugin('ldap');
+    	    }
+	    $this->userid_regex = "/^". $this->authldap->config->field_map_idnumber. "=([^,]+),/i";
+	    debugging(self::$errorlogtag . sprintf('userid_from_dn: Match userid with %s from %s',$this->userid_regex,$dn),
+		    DEBUG_DEVELOPER);
+	}
+	if (preg_match($this->userid_regex, $dn, $matches)) {
 		return $matches[1];
 	} else {
 		return '';

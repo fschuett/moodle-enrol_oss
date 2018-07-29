@@ -427,34 +427,6 @@ class enrol_oss_plugin extends enrol_plugin {
     }
 
     /**
-     * Called from all enabled enrol plugins that returned true from is_cron_required
-     * @return void
-     */
-    public function cron() {
-        global $CFG;
-
-        // The enrolment depends on user synchronization via auth_ldap.
-        if (!is_enabled_auth('ldap')) {
-            debugging('[AUTH LDAP] ' . get_string('pluginnotenabled', 'auth_ldap'));
-            die;
-        }
-
-        if (!enrol_is_enabled('cohort')) {
-            debugging('[ENROL COHORT]'.get_string('pluginnotenabled', 'enrol_cohort'));
-            die;
-        }
-
-        if (!enrol_is_enabled('oss')) {
-            debugging('[ENROL OSS] '.get_string('pluginnotenabled', 'enrol_oss'));
-            die;
-        }
-
-        mtrace("Starting enrolments for oss enrolments plugin...");
-        $this->enrol_oss_sync();
-        mtrace("finished.");
-    }
-
-    /**
      * return an array of groups, which are defined in course idnumber
      * @parameters $courseid : $course->id, $idnumber : $course->idnumber
      *             $shortname : $course->shortname

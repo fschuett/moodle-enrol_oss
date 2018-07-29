@@ -53,17 +53,17 @@ function format_parents_select_menu ($parents) {
         $keys = array_keys($parents);
         list($in, $params) = $DB->get_in_or_equal($keys);
         $sqlwhere = "p.id $in";
-        $sql = "SELECT p.id AS id,".$DB->sql_concat(
-                            $DB->sql_fullname('p.firstname', 'p.lastname'),"'('", 
-                            "(
-                                SELECT ".$DB->sql_fullname('ch.firstname', 'ch.lastname')." FROM {user} ch
-                                JOIN {context} cx ON ch.id = cx.instanceid
-                                JOIN {role_assignments} ra ON ra.contextid = cx.id
-                                WHERE cx.contextlevel=".CONTEXT_USER." AND ra.userid = p.id
-                            )"
-                            ,"')'")." AS fullname
-                            FROM {user} p WHERE $sqlwhere
-                            ORDER BY fullname";
+        $sql = "SELECT p.id AS id, ".
+                $DB->sql_concat(
+                    $DB->sql_fullname('p.firstname', 'p.lastname'),"'('"," COALESCE(ch.fullname,'') ","')'")
+                ." AS fullname FROM {user} p LEFT OUTER JOIN 
+                (
+                    SELECT ".$DB->sql_fullname('ch.firstname', 'ch.lastname')." AS fullname,ra.userid AS elternid FROM {user} ch
+                    JOIN {context} cx ON ch.id = cx.instanceid
+                    JOIN {role_assignments} ra ON ra.contextid = cx.id
+                    WHERE cx.contextlevel=".CONTEXT_USER."
+                ) AS ch ON ch.elternid=p.id
+                WHERE $sqlwhere ORDER BY fullname";
         if ($records = $DB->get_records_sql($sql, $params, 0, MAX_BULK_USERS)) {
             foreach ($records as $record) {
                 $record = (array)$record;

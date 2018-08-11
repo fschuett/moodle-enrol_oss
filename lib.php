@@ -1054,7 +1054,7 @@ class enrol_oss_plugin extends enrol_plugin {
 		if ( $this->config->class_use_prefixes ) {
 		$classes = explode ( ',', $this->config->class_prefixes );
 		foreach ( $classes as $c ) {
-			$pattern [] = '(' . $this->config->class_attribute . '=' . $c . '*)';
+			$pattern [] = '(' . $this->config->attribute . '=' . $c . '*)';
 		}
 		$pattern = '(|' . implode ( $pattern ) . ')';
 		} else {

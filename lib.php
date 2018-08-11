@@ -479,7 +479,7 @@ class enrol_oss_plugin extends enrol_plugin {
         if (!$ldapconnection) {
             return FALSE;
         }
-        $filter = '(role=students*)';
+        $filter = 'memberOf=CN=STUDENTS*';
         $contexts = explode(';', $this->authldap->config->contexts);
         foreach ($contexts as $context) {
             $context = trim($context);
@@ -490,12 +490,12 @@ class enrol_oss_plugin extends enrol_plugin {
             if ($this->authldap->config->search_sub) {
                 // Use ldap_search to find first child from subtree.
                 $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
-                    $this->config->parents_child_attribute, 'uid'
+                    $this->config->parents_child_attribute, 'cn'
                 ));
             } else {
                 // Search only in this context.
                 $ldap_result = ldap_list($ldapconnection, $context, $filter, array (
-                    $this->config->parents_child_attribute, 'uid'
+                    $this->config->parents_child_attribute, 'cn'
                 ));
             }
 
@@ -504,10 +504,10 @@ class enrol_oss_plugin extends enrol_plugin {
             for ($i = 0; $i < count($children) - 1; $i++) {
                 if(array_key_exists($this->config->parents_child_attribute, $children[$i])) {
                     $fresult[$children[$i][$this->config->parents_child_attribute][0]] = 
-                            $children[$i]['uid'][0];
-				} else {
-				    debugging(self::$errorlogtag."ldap_get_children(): entry ".$children[$i]['uid'][0]." has no  attribute ".$this->config->parents_child_attribute."\n");
-				}
+                        $children[$i]['cn'][0];
+                } else {
+                    debugging(self::$errorlogtag."ldap_get_children(): entry ".$children[$i]['cn'][0]." has no  attribute ".$this->config->parents_child_attribute."\n");
+               }
             }
         }
         $this->authldap->ldap_close();
@@ -1323,6 +1323,15 @@ class enrol_oss_plugin extends enrol_plugin {
         return $ret;
 	}
 	
+	function is_ldap_or_manual($username){
+		$pattern = '/^'.$this->config->parents_prefix.'*/';
+		if(preg_match($pattern, $username)){
+			return 'manual';
+		} else {
+			return 'ldap';
+		}
+	}
+
 	function class_enrol($course, $enrol_instance, $users, $role) {
 		global $DB;
 		if (!is_array($users)) {
@@ -1331,16 +1340,10 @@ class enrol_oss_plugin extends enrol_plugin {
 		foreach ($users as $username) {
 			$user = $DB->get_record ( 'user', array (
 						'username' => $username,
-						'auth' => 'ldap'
+						'auth' => $this->is_ldap_or_manual($username)
 				) );
 			if (!$user) {
-			    $user = $DB->get_record ( 'user', array (
-						'username' => $username,
-						'auth' => 'manual'
-				) );
-			}
-			if (!$user) {
-				debugging ( self::$errorlogtag . "class_enrol($username) not found in ldap and not in manual users!");
+				debugging ( self::$errorlogtag . "class_enrol($username) not found in ".$this->is_ldap_or_manual($username)." users!");
 				continue;
 			}
 			$this->enrol_user($enrol_instance, $user->id, $role);
@@ -1357,10 +1360,10 @@ class enrol_oss_plugin extends enrol_plugin {
 		foreach ($users as $username) {
 			$user = $DB->get_record ( 'user', array (
 						'username' => $username,
-						'auth' => 'ldap'
+						'auth' => $this->is_ldap_or_manual($username)
 				) );
 			if (!$user) {
-				debugging ( self::$errorlogtag . "class_unenrol($username) not found in ldap!\n");
+				debugging ( self::$errorlogtag . "class_unenrol($username) not found in ".$this->is_ldap_or_manual($username)." users!\n");
 				continue;
 			}
 			$this->unenrol_user($enrol_instance, $user->id);
@@ -1537,15 +1540,15 @@ class enrol_oss_plugin extends enrol_plugin {
 	 *
 	 * @return array (attr#1 => uid#1, attr#2 => uid#2, ...)
 	 */
-	private function parents_get_children_uids() {
-	    global $DB;
-	    $ldap_students = $this->ldap_get_children();
+    private function parents_get_children_uids() {
+        global $DB;
+        $ldap_students = $this->ldap_get_children();
         $studentgroup = $this->get_cohort_id($this->config->students_group_name);
         $result = $this->get_cohort_members($studentgroup);
         $mdl_students = array();
         foreach($result as $key => $obj) {
             $mdl_students[$obj->username] = $obj->id;
-		}
+        }
         $result = array();
         foreach( $ldap_students as $attr => $uid ) {
             $result[$attr] = $mdl_students[$uid];

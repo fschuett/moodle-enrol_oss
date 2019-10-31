@@ -13,7 +13,9 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-
+# debug function
+function kill($data){ var_dump($data); exit; }
+@ini_set('display_errors','1');
 /**
  * OSS enrolment plugin implementation.
  *
@@ -335,6 +337,87 @@ class enrol_oss_plugin extends enrol_plugin {
         return true;
     }
 
+    /** This function returns an array of all chilren (visible and invisible).
+     * @global DB
+     * @param core_course_category $cat
+     * @return array(core_course_category)
+     */
+    private function category_get_all_children($cat = NULL) {
+        global $DB;
+
+        $ret = array();
+        if (!isset($cat)) {
+            return $ret;
+        }
+        $records = $DB->get_records('course_categories', array('parent' => $cat->id), 'sortorder','id,sortorder');
+        if (empty($records)) {
+            return $ret;
+        }
+        $ret = core_course_category::get_many(array_keys($records));
+
+        return $ret;
+    }
+
+    /** This function checks all teacher context for correct enrolments.
+     * @uses DB
+     * @return void
+     */
+    public function repair_teachers_contexts() {
+        global $DB;
+
+        debugging(self::$errorlogtag.'repair_teacher_context: reconstruct missing roles '
+            . ' ... started '.date("H:i:s"), DEBUG_DEVELOPER);
+        if (!isset($this->teacher_obj)) {
+            $this->teacher_obj = $this->get_teacher_category();
+        }
+        $teachercontext = coursecat::get($this->teacher_obj->id);
+        if (empty($teachercontext)) {
+            debugging(self::$errorlogtag . 'Could not get teacher context');
+            return;
+        }
+        if ($categories = $this->category_get_all_children($teachercontext)) {
+            foreach ($categories as $cat) {
+                debugging(sprintf(self::$errorlogtag."repair_teacher_context: visit context %s ",$cat->name).date("H:i:s")."\n", DEBUG_DEVELOPER);
+                if (intval($cat->coursecount) < 1) {
+                    continue;
+                }
+                $teacher = $cat->idnumber;
+                if (empty($teacher)) {
+                    debugging(self::$errorlogtag .
+                        sprintf('teacher category %s number %d without teacher userid',
+                            $cat->name, $cat->id));
+                    continue;
+                }
+                if ($this->is_teacher($teacher)) {
+                    if (! $cat->visible) {
+                        $cat->show();
+                    }
+                    $user = $DB->get_record('user', array('username'=>$teacher, 'auth' => 'ldap'));
+                    if (!empty($user) && !$this->teacher_has_role($user,$cat)) {
+                        debugging(self::$errorlogtag . sprintf('   ... assign course creator role in %s to %s',$cat->name, $user->name));
+                        $this->teacher_assign_role($user,$cat);
+                    }
+                    $courselist = $cat->get_courses();
+                    $manualplugin = enrol_get_plugin('manual');
+                    $role = $this->config->teachers_course_role;
+                    $editingteacher = get_archetype_roles('editingteacher');
+                    foreach ( $courselist as $course ) {
+                        $context = context_course::instance($course->id);
+                        if(! is_enrolled($context, $user, '', true)) {
+                            $instance = $DB->get_record('enrol', array('courseid'=>$course->id, 'enrol'=>'manual'), '*', IGNORE_MISSING);
+                            $manualplugin->enrol_user($instance, $user->id, $role);
+                            $manualplugin->enrol_user($instance, $user->id, $editingteacher->id);
+                            mtrace ( self::$errorlogtag . "enrolled role id $role and ".$editingteacher->id." for " . $username
+                                . "(" . $user->idnumber . ") in ".$course->shortname."(".$course->id.")\n" );
+                        }
+                    }
+
+                }
+            }
+        }
+
+    }
+
     /**
      * This function checks all users created by auth ldap and updates the city field.
      * The config value $CFG->defaultcity must be non empty.
@@ -503,7 +586,7 @@ class enrol_oss_plugin extends enrol_plugin {
             // Add found children to list.
             for ($i = 0; $i < count($children) - 1; $i++) {
                 if(array_key_exists($this->config->parents_child_attribute, $children[$i])) {
-                    $fresult[$children[$i][$this->config->parents_child_attribute][0]] = 
+                    $fresult[$children[$i][$this->config->parents_child_attribute][0]] =
                         $children[$i]['cn'][0];
                 } else {
                     debugging(self::$errorlogtag."ldap_get_children(): entry ".$children[$i]['cn'][0]." has no  attribute ".$this->config->parents_child_attribute."\n");
@@ -609,7 +692,7 @@ class enrol_oss_plugin extends enrol_plugin {
         $ret = array ();
         $members = array ();
         if (!isset($this->authldap) or empty($authldap)) {
-            $authldap = get_auth_plugin('ldap');
+            $this->authldap = get_auth_plugin('ldap');
         }
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
@@ -1303,7 +1386,7 @@ class enrol_oss_plugin extends enrol_plugin {
 
 	function get_class_parents($class = null) {
 	    global $DB;
-	    
+
         if( $class == null ){
             debugging(self::$errorlogtag . "get_class_parents(null) called!\n");
             return array();
@@ -1322,7 +1405,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         return $ret;
 	}
-	
+
 	function is_ldap_or_manual($username){
 		$pattern = '/^'.$this->config->parents_prefix.'*/';
 		if(preg_match($pattern, $username)){
@@ -1527,15 +1610,15 @@ class enrol_oss_plugin extends enrol_plugin {
 	    $group = $this->get_group($courseid, $groupid);
 	    groups_remove_member($group->id, $userid);
 	}
-	
-	
+
+
     /*------------------------------------------------------
      * parents functions
      * -----------------------------------------------------
      */
 
 	/**
-	 * This function reads parents_child_attribute and username from ldap and 
+	 * This function reads parents_child_attribute and username from ldap and
 	 * user id from moodle user database and returns an array indexed with the ldap attribute.
 	 *
 	 * @return array (attr#1 => uid#1, attr#2 => uid#2, ...)
@@ -1555,7 +1638,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         return $result;
 	}
-	
+
 	/**
 	 * This function adds the parent -> child relation to moodle database.
 	 *
@@ -1564,7 +1647,7 @@ class enrol_oss_plugin extends enrol_plugin {
 	 * @return true   - success, false otherwise
 	 */
 	 private function parents_add_relationship($parent, $child) {
-	     if( empty($parent) or empty($child) or $parent == 0 or $child == 0) { 
+	     if( empty($parent) or empty($child) or $parent == 0 or $child == 0) {
              debugging(self::$errorlogtag . "parents_add_relationship(parent=$parent,child=$child) - ungültige Werte\n");
              return false;
 		 }
@@ -1572,7 +1655,7 @@ class enrol_oss_plugin extends enrol_plugin {
 	     $roleid = $this->config->parents_role;
 	     role_assign($roleid, $parent, $context, 'enrol_oss');
 	 }
-	 
+
 	/**
 	 * This function removes the parent -> child relation from moodle database.
 	 *
@@ -1581,7 +1664,7 @@ class enrol_oss_plugin extends enrol_plugin {
 	 * @return true   - success, false otherwise
 	 */
 	 private function parents_remove_relationship($parent, $child) {
-	     if( empty($parent) or empty($child) or $parent == 0 or $child == 0) { 
+	     if( empty($parent) or empty($child) or $parent == 0 or $child == 0) {
              debugging(self::$errorlogtag . "parents_add_relationship(parent=$parent,child=$child) - ungültige Werte\n");
              return false;
 		 }
@@ -1589,8 +1672,8 @@ class enrol_oss_plugin extends enrol_plugin {
 	     $roleid = $this->config->parents_role;
 	     role_unassign($roleid, $parent, $context, 'enrol_oss');
 	 }
-	 
-	 
+
+
 	/**
 	 * This function creates / removes relationships between parents and children.
 	 * The parents are identified by parents_prefix and the matching child is found
@@ -1600,7 +1683,7 @@ class enrol_oss_plugin extends enrol_plugin {
 	    global $DB, $CFG;
 	    $sql = "id<>".$CFG->siteguest." AND deleted<>1 AND auth='manual'"
 	                ." AND username LIKE '".$this->config->parents_prefix."%'";
-	    $rs = $DB->get_recordset_select('user', $sql, array(), 
+	    $rs = $DB->get_recordset_select('user', $sql, array(),
 	                'username', 'username,id');
 	    $parents = array();
 		foreach( $rs as $user ) {
@@ -1644,7 +1727,7 @@ class enrol_oss_plugin extends enrol_plugin {
 		    }
 		}
 	}
-	
+
     /*------------------------------------------------------
      * teachers functions
      * -----------------------------------------------------

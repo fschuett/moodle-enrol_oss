@@ -14,32 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * CLI sync for full OSS synchronisation.
- *
- * This script is meant to be called from a cronjob to sync moodle with the OSS
- * server to pickup groups as moodle global groups (cohorts).
- *
- * Sample cron entry:
- * # 5 minutes past every full hour
- * 5 * * * * $sudo -u www-data /usr/bin/php /var/www/moodle/enrol/oss/cli/sync.php
- *
- * Notes:
- *   - it is required to use the web server account when executing PHP CLI scripts
- *   - you need to change the "www-data" to match the apache user account
- *   - use "su" if "sudo" not available
- *   - If you have a large number of users, you may want to raise the memory limits
- *     by passing -d momory_limit=256M
- *   - For debugging & better logging, you are encouraged to use in the command line:
- *     -d log_errors=1 -d error_reporting=E_ALL -d display_errors=0 -d html_errors=0
- *
- * @package    enrol
- * @subpackage oss
- * @author     Frank Schütte - test script
- * @copyright  2012 Frank Schütte <fschuett@gymnasium-himmelsthuer.de>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 define('CLI_SCRIPT', true);
 
 require(dirname(dirname(dirname(dirname(__FILE__)))).'/config.php');
@@ -55,18 +29,14 @@ if ($unrecognized) {
 
 if ($options['help']) {
     $help =
-    "Execute enrol sync with external OSS server.
-The enrol_oss plugin must be enabled and properly configured.
+    "Execute teachers contexts repair.
 
 Options:
 -h, --help            Print out this help
 
 Example:
-\$sudo -u www-data /usr/bin/php enrol/oss/cli/sync.php
+\$sudo -u www-data /usr/bin/php enrol/oss/cli/repair_teachers_contexts.php
 
-Sample cron entry:
-# 5 minutes past every full hour
-5 * * * * \$sudo -u www-data /usr/bin/php /var/www/moodle/enrol/oss/cli/sync.php
 ";
 
     echo $help;
@@ -88,11 +58,8 @@ if (!enrol_is_enabled('oss')) {
     die;
 }
 
-$result = 0;
-
-// Update enrolments.
+// Repair teachers contexts.
 $enrol = enrol_get_plugin('oss');
-// Hier den zu testenden Befehl eintragen:
 $enrol->repair_teachers_contexts();
 
-exit($result);
+exit(0);

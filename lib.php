@@ -376,9 +376,6 @@ class enrol_oss_plugin extends enrol_plugin {
         if ($categories = $this->category_get_all_children($teachercontext)) {
             foreach ($categories as $cat) {
                 debugging(sprintf(self::$errorlogtag."repair_teacher_context: visit context %s ",$cat->name).date("H:i:s")."\n", DEBUG_DEVELOPER);
-                if (intval($cat->coursecount) < 1) {
-                    continue;
-                }
                 $teacher = $cat->idnumber;
                 if (empty($teacher)) {
                     debugging(self::$errorlogtag .
@@ -392,24 +389,9 @@ class enrol_oss_plugin extends enrol_plugin {
                     }
                     $user = $DB->get_record('user', array('username'=>$teacher, 'auth' => 'ldap'));
                     if (!empty($user) && !$this->teacher_has_role($user,$cat)) {
-                        debugging(self::$errorlogtag . sprintf('   ... assign course creator role in %s to %s',$cat->name, $user->name));
+                        debugging(self::$errorlogtag . sprintf('   ... assign course creator and editing teacher role in %s to %s',$cat->name, $user->username));
                         $this->teacher_assign_role($user,$cat);
                     }
-                    $courselist = $cat->get_courses();
-                    $manualplugin = enrol_get_plugin('manual');
-                    $role = $this->config->teachers_course_role;
-                    $editingteacher = get_archetype_roles('editingteacher');
-                    foreach ( $courselist as $course ) {
-                        $context = context_course::instance($course->id);
-                        if(! is_enrolled($context, $user, '', true)) {
-                            $instance = $DB->get_record('enrol', array('courseid'=>$course->id, 'enrol'=>'manual'), '*', IGNORE_MISSING);
-                            $manualplugin->enrol_user($instance, $user->id, $role);
-                            $manualplugin->enrol_user($instance, $user->id, $editingteacher->id);
-                            mtrace ( self::$errorlogtag . "enrolled role id $role and ".$editingteacher->id." for " . $username
-                                . "(" . $user->idnumber . ") in ".$course->shortname."(".$course->id.")\n" );
-                        }
-                    }
-
                 }
             }
         }
@@ -1876,7 +1858,9 @@ class enrol_oss_plugin extends enrol_plugin {
     }
 
     /**
-     * This function tests if the teachers_course_role for the teacher $user is given to category $cat.
+     * This function tests if the roles teachers_course_role and teachers_editingteacher_role for the
+     * teacher $user is given to category $cat.
+     *
      * @param object $user teacher
      * @param object $cat category
      * @return false|true
@@ -1895,14 +1879,19 @@ class enrol_oss_plugin extends enrol_plugin {
 
         // Tests for teachers role.
         $teacherscontext = context_coursecat::instance($cat->id);
-        return $DB->record_exists('role_assignments', array('roleid'=>$this->config->teachers_course_role,
+        $teacher_coursecreator = $DB->record_exists('role_assignments', array('roleid'=>$this->config->teachers_course_role,
                         'contextid'=>$teacherscontext->id, 'userid'=>$user->id, 'component'=>'enrol_oss'));
+        $teacher_editingteacher = $DB->record_exists('role_assignments', array('roleid'=>$this->config->teachers_editingteacher_role,
+            'contextid'=>$teacherscontext->id, 'userid'=>$user->id, 'component'=>'enrol_oss'));
+        return $teacher_coursecreator && $teacher_editingteacher;
     }
 
     /**
-     * This function adds the teachers_course_role for the teacher $user to the given category $cat.
-     * @param object $user teacher for whom the coursecreator role will be added
-     * @param object $cat category for whom to add the teacher as role teachers_course_role
+     * This function adds the roles teachers_course_role and teachers_editingteacher_role for the
+     * teacher $user to the given category $cat.
+     *
+     * @param object $user teacher for whom the coursecreator and editingteacher roles will be added
+     * @param object $cat category for whom to add the teacher as roles teachers_course_role and editingteacher_role
      * @return false|true
      * @uses $CFG;
      */
@@ -1923,14 +1912,21 @@ class enrol_oss_plugin extends enrol_plugin {
                     $user->username . ') in context (' . $teacherscontext->id . ').');
             return false;
         }
-        debugging(self::$errorlogtag."assign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
+        if (!role_assign($this->config->teachers_editingteacher_role, $user->id, $teacherscontext, 'enrol_oss')) {
+            debugging(self::$errorlogtag . 'could not assign role (' . $this->config->teachers_editiingteacher_role . ') to user (' .
+                $user->username . ') in context (' . $teacherscontext->id . ').');
+            return false;
+        }
+        debugging(self::$errorlogtag."assign teacher roles for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
         return true;
     }
 
     /**
-     * This function removes the teachers_course_role for the teacher $user from the given category $cat.
-     * @param object $user teacher for whom the coursecreator role will be removed
-     * @param object $cat category for whom to remove the teacher as role teachers_course_role
+     * This function removes the teachers_course_role and teachers_editingteacher_role for the
+     * teacher $user from the given category $cat.
+     *
+     * @param object $user teacher
+     * @param object $cat category
      * @return false|true
      * @uses $CFG;
      */
@@ -1948,6 +1944,7 @@ class enrol_oss_plugin extends enrol_plugin {
         // Removes teachers configured course role.
         $teacherscontext = context_coursecat::instance($cat->id);
         role_unassign($this->config->teachers_course_role, $user->id, $teacherscontext, 'enrol_oss');
+        role_unassign($this->config->teachers_editingteacher_role, $user->id, $teacherscontext, 'enrol_oss');
         debugging(self::$errorlogtag."unassign teacher role for ".$user->id." in category ".$teacherscontext->id, DEBUG_DEVELOPER);
         return true;
     }

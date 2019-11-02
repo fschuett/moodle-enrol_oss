@@ -29,6 +29,20 @@
 
 function xmldb_enrol_oss_upgrade($oldversion) {
     global $CFG, $DB;
+    require_once($CFG->libdir . '/accesslib.php');
+
+    if ($oldversion < '2019110201') {
+        // Create the category teacher role (ccteacher).
+        if (!$DB->record_exists('role', array('shortname' => 'ccteacher'))) {
+            $ccteacherid = create_role(get_string('ccteacher', 'enrol_oss'), 'ccteacher',
+                get_string('ccteacher_desc', 'enrol_oss'),
+                'editingteacher');
+                $contextlevels = get_default_contextlevels('editingteacher');
+                $contextlevels = CONTEXT_COURSECAT;
+                set_role_contextlevels($ccteacherid, $contextlevels);
+        }
+        upgrade_plugin_savepoint(true, '2019110201','enrol','enrol_oss');
+    }
 
     return true;
 }

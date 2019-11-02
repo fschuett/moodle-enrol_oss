@@ -29,7 +29,7 @@ function xmldb_enrol_oss_install() {
     global $CFG, $DB;
 
     require_once($CFG->libdir . '/accesslib.php');
-    
+
     // Move coursecreator roles from oss to enrol_oss.
     echo "move old coursecreator assignments from oss to enrol_oss\n";
     $role = $DB->get_record('role', array('shortname'=>'coursecreator'));
@@ -45,6 +45,16 @@ function xmldb_enrol_oss_install() {
     // Remove role assignments oss.
     echo "remove all remaining oss assignments\n";
     $DB->delete_records('role_assignments', array('component'=>'oss'));
+
+    // Create the category teacher role (ccteacher).
+    if (!$DB->record_exists('role', array('shortname' => 'ccteacher'))) {
+        $ccteacherid = create_role(get_string('ccteacher', 'enrol_oss'), 'ccteacher',
+                                    get_string('ccteacher_desc', 'enrol_oss'),
+                                    'editingteacher');
+        $contextlevels = get_default_contextlevels('editingteacher');
+        $contextlevels = CONTEXT_COURSECAT;
+        set_role_contextlevels($ccteacherid, $contextlevels);
+    }
 
     return true;
 }

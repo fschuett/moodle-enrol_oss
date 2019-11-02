@@ -1,5 +1,4 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -99,6 +98,24 @@ if ($ADMIN->fulltree) {
         $settings->add(new admin_setting_configselect('enrol_oss/teachers_course_role',
             get_string('teachers_course_role_key', 'enrol_oss'),
             get_string('teachers_course_role', 'enrol_oss'), $coursecreator->id, $options));
+    }
+    if (!during_initial_install()) {
+        $options = get_default_enrol_roles(context_system::instance());
+        $courseteachers = get_all_roles();
+        $courseteacher = NULL;
+        foreach ($courseteachers as $id => $record) {
+            if ($record->shortname == 'ccteacher') {
+                $courseteacher = $record;
+                break;
+            }
+        }
+        if (!isset($courseteacher)) {
+            $courseteacher = get_archetype_roles('editingteacher');
+            $courseteacher = reset($courseteacher);
+        }
+        $settings->add(new admin_setting_configselect('enrol_oss/teachers_editingteacher_role',
+            get_string('teachers_editingteacher_role_key', 'enrol_oss'),
+            get_string('teachers_editingteacher_role', 'enrol_oss'), $courseteacher->id, $options));
     }
     $options = $yesno;
     $settings->add(new admin_setting_configselect('enrol_oss/teachers_category_autocreate',

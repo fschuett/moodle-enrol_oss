@@ -13,9 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
-# debug function
-function kill($data){ var_dump($data); exit; }
-@ini_set('display_errors','1');
+
 /**
  * OSS enrolment plugin implementation.
  *

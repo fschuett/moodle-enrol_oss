@@ -41,7 +41,7 @@ function xmldb_enrol_oss_upgrade($oldversion) {
                 $contextlevels = CONTEXT_COURSECAT;
                 set_role_contextlevels($ccteacherid, $contextlevels);
         }
-        upgrade_plugin_savepoint(true, '2019110201','enrol','enrol_oss');
+        upgrade_plugin_savepoint(true, '2019110201','enrol','oss');
     }
 
     return true;

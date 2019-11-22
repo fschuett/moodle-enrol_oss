@@ -206,7 +206,6 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     public function sync_enrolments() {
         global $CFG, $DB;
-        require_once($CFG->libdir . '/coursecatlib.php');
 
         debugging(self::$errorlogtag.'sync_enrolments... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
@@ -1044,7 +1043,6 @@ class enrol_oss_plugin extends enrol_plugin {
 	 */
 	public static function get_class_category($config) {
 		global $CFG, $DB;
-		require_once ($CFG->libdir . '/coursecatlib.php');
 		// Create class category if needed.
 		$cat_obj = $DB->get_record ( 'course_categories', array (
 				'idnumber' => self::$idnumber_class_cat,
@@ -1077,7 +1075,7 @@ class enrol_oss_plugin extends enrol_plugin {
 	 */
 	private function get_classes_moodle($userid = "*") {
 		global $CFG;
-		require_once ($CFG->libdir . '/coursecatlib.php');
+		
 		$ret = array ();
 		if ($userid != "*") {
 			$user = get_user_by_username($userid, 'id', null, IGNORE_MISSING);
@@ -1719,7 +1717,6 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     private function delete_move_teacher_to_attic($teacher) {
         global $CFG;
-        require_once($CFG->libdir . '/coursecatlib.php');
         require_once($CFG->libdir . '/questionlib.php');
 
         if (empty($attic_obj)) {
@@ -1770,8 +1767,7 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     private function resort_categories($id) {
         global $CFG,$DB;
-        require_once($CFG->libdir . '/coursecatlib.php');
-
+        
         $cat = \core_course_category::get($id, MUST_EXIST, true); //alwaysreturnhidden
         if (empty($cat)) {
             debugging("Could not get $id course category for sorting.\n");
@@ -1824,8 +1820,7 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     private function teacher_add_category(&$user) {
         global $CFG, $DB;
-        require_once($CFG->libdir . '/coursecatlib.php');
-
+        
         if (empty($user->username) || empty($user->firstname) || empty($user->lastname)) {
         	debugging(self::$errorlogtag .
         			sprintf('teacher_add_category: data missing(userid:%s|firstname:%s|lastname:%s)',
@@ -1869,7 +1864,6 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     private function teacher_has_role($user, $cat) {
         global $CFG,$DB;
-        require_once($CFG->libdir . '/coursecatlib.php');
 
         if (empty($user)){
             throw new coding_exception('Invalid call to teacher_has_role(), user cannot be empty.');
@@ -1898,7 +1892,6 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     private function teacher_assign_role($user, $cat) {
         global $CFG;
-        require_once($CFG->libdir . '/coursecatlib.php');
         if (empty($user)){
             throw new coding_exception('Invalid call to teacher_assign_role(), user cannot be empty.');
         }
@@ -1933,8 +1926,7 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     private function teacher_unassign_role($user, $cat) {
         global $CFG;
-        require_once($CFG->libdir . '/coursecatlib.php');
-
+        
         if (empty($user)){
             throw new coding_exception('Invalid call to teacher_unassign_role(), user cannot be empty.');
         }
@@ -1962,8 +1954,7 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     public static function create_category ($name, $idnumber, $description, $parent = 0, $sortorder = 0, $visible = 1) {
         global $CFG,$DB;
-        require_once($CFG->libdir . '/coursecatlib.php');
-
+        
         debugging(self::$errorlogtag . sprintf("create_category... %s (%s),\n                sortorder(%s) %s",
                  $name, $description, $sortorder, date("H:i:s")), DEBUG_DEVELOPER);
         $data = new stdClass();

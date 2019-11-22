@@ -33,7 +33,6 @@ function settings_class_category_updated($full_name) {
     global $CFG;
     
     require_once $CFG->dirroot.'/enrol/oss/lib.php';
-    require_once($CFG->libdir . '/coursecatlib.php');
     
     $config = get_config('enrol_oss');
     $classcat = enrol_oss_plugin::get_class_category($config);

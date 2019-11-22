@@ -913,6 +913,7 @@ class enrol_oss_plugin extends enrol_plugin {
         global $CFG;
         if (!empty($this->config->prefix_teacher_members)) {
             $ar = explode(',', $this->config->prefix_teacher_members);
+            $ar = array_map('ltrim',$ar);
             foreach ($ar as $prefix) {
                 if (strpos($group, $prefix) === 0) {
                     return true;

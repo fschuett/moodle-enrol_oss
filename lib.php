@@ -268,7 +268,7 @@ class enrol_oss_plugin extends enrol_plugin {
         debugging(self::$errorlogtag.'sync_enrolments: autoremove teacher course categories '
             . ' of removed teachers if requested... started '.date("H:i:s"), DEBUG_DEVELOPER);
         if ($this->config->teachers_category_autoremove) {
-            $teachercontext = coursecat::get($this->teacher_obj->id);
+            $teachercontext = \core_course_category::get($this->teacher_obj->id);
             if (empty($teachercontext)) {
 	        debugging(self::$errorlogtag . 'Could not get teacher context');
 	        return false;
@@ -368,7 +368,7 @@ class enrol_oss_plugin extends enrol_plugin {
         if (!isset($this->teacher_obj)) {
             $this->teacher_obj = $this->get_teacher_category();
         }
-        $teachercontext = coursecat::get($this->teacher_obj->id);
+        $teachercontext = \core_course_category::get($this->teacher_obj->id);
         if (empty($teachercontext)) {
             debugging(self::$errorlogtag . 'Could not get teacher context');
             return;
@@ -1061,7 +1061,7 @@ class enrol_oss_plugin extends enrol_plugin {
 				}
 			}
 		} else {
-			$cat_obj = coursecat::get($cat_obj->id);
+			$cat_obj = \core_course_category::get($cat_obj->id);
 		}
 		if (! $cat_obj) {
 			debugging ( self::$errorlogtag . "class category ".self::$idnumber_class_cat." not found." );
@@ -1070,7 +1070,7 @@ class enrol_oss_plugin extends enrol_plugin {
 	}
 
 	/**
-	 * returns an array of class course_in_list objects (for the $userid)
+	 * returns an array of class \core_course_list_element objects (for the $userid)
 	 *
 	 * @param string $userid
 	 * @return multitype:array
@@ -1732,7 +1732,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
 
         $deletable = true;
-        if (!$teachercat = coursecat::get($teacher->id, MUST_EXIST, true)) { //alwaysreturnhidden
+        if (!$teachercat = \core_course_category::get($teacher->id, MUST_EXIST, true)) { //alwaysreturnhidden
             debugging($this->errorlotag . "delete_move_teacher_to_attic could not get category $teacher.");
             return false;
         }
@@ -1772,7 +1772,7 @@ class enrol_oss_plugin extends enrol_plugin {
         global $CFG,$DB;
         require_once($CFG->libdir . '/coursecatlib.php');
 
-        $cat = coursecat::get($id, MUST_EXIST, true); //alwaysreturnhidden
+        $cat = \core_course_category::get($id, MUST_EXIST, true); //alwaysreturnhidden
         if (empty($cat)) {
             debugging("Could not get $id course category for sorting.\n");
             return false;
@@ -1841,7 +1841,7 @@ class enrol_oss_plugin extends enrol_plugin {
         $cat_obj = $DB->get_record('course_categories', array('idnumber'=>$user->username, 'parent' => $this->attic_obj->id),
                 '*',IGNORE_MULTIPLE);
         if ($cat_obj) {
-            $coursecat = coursecat::get($cat_obj->id, MUST_EXIST, true);//alwaysreturnhidden
+            $coursecat = \core_course_category::get($cat_obj->id, MUST_EXIST, true);//alwaysreturnhidden
             $coursecat->change_parent($this->teacher_obj->id);
             debugging(self::$errorlogtag."moved teacher category ".$cat_obj->id." to teachers category", DEBUG_DEVELOPER);
         } else {
@@ -1972,7 +1972,7 @@ class enrol_oss_plugin extends enrol_plugin {
         $data->description = $description;
         $data->parent = $parent;
         $data->visible = $visible;
-        $cat = coursecat::create($data);
+        $cat = \core_course_category::create($data);
         if (!$cat) {
             debugging('Could not insert the new course category '.$cat->name.'('.$cat->idnumber.')');
             return false;

@@ -24,7 +24,7 @@
  * @author     Frank Schütte based on code by Iñaki Arenaza
  * @copyright  1999 onwards Martin Dougiamas {@link http://moodle.com}
  * @copyright  2010 Iñaki Arenaza <iarenaza@eps.mondragon.edu>
- * @copyright  2013 Frank Schütte <fschuett@gymhim.de>
+ * @copyright  2020 Frank Schütte <fschuett@gymhim.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

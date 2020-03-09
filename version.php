@@ -20,15 +20,15 @@
  * @package    enrol
  * @subpackage oss
  * @author     Frank Schütte
- * @copyright  2017 Frank Schütte <fschuett@gymhim.de>
+ * @copyright  2020 Frank Schütte <fschuett@gymhim.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2019110201;        // The current plugin version (Date: YYYYMMDDXX).
+$plugin->version   = 2020030901;        // The current plugin version (Date: YYYYMMDDXX).
 $plugin->requires  = 2015051100;        //  Requires Moodle version 2.9
 $plugin->component = 'enrol_oss';   // Full name of the plugin (used for diagnostics).
 $plugin->maturity  = MATURITY_BETA;     // Beta, nees testing.
-$plugin->release   = '2.0 (Build: 2019110201)';
+$plugin->release   = '2.0 (Build: 2020030901)';
 $plugin->dependencies = array('auth_ldap'=>ANY_VERSION, 'enrol_cohort'=>ANY_VERSION);

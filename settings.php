@@ -19,7 +19,7 @@
  * @package    enrol
  * @subpackage oss
  * @author     Frank Schütte
- * @copyright  2012 Frank Schütte <fschuett@gymhim.de>
+ * @copyright  2020 Frank Schütte <fschuett@gymhim.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 

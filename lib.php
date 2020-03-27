@@ -516,6 +516,17 @@ class enrol_oss_plugin extends enrol_plugin {
                     $shortname . ':' . $idnumber, array('id'=>$courseid));
             $groups = explode(',', $idnumber);
         }
+        $changed = FALSE;
+        for($i = 0; $i < count($groups); $i++) {
+            if( $groups[$i] != strtoupper($groups[$i]) ) {
+                $changed = TRUE;
+                $groups[$i] = strtoupper($groups[$i]);
+            }
+        }
+        if ($changed) {
+            $DB->set_field('course', 'idnumber',
+                $shortname . ':' . implode($groups), array('id'=>$courseid));
+        }
         return $groups;
     }
 

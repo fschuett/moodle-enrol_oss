@@ -52,7 +52,7 @@ function xmldb_enrol_oss_install() {
                                     get_string('ccteacher_desc', 'enrol_oss'),
                                     'editingteacher');
         $contextlevels = get_default_contextlevels('editingteacher');
-        $contextlevels = CONTEXT_COURSECAT;
+        $contextlevels[] = CONTEXT_COURSECAT;
         set_role_contextlevels($ccteacherid, $contextlevels);
     }
 

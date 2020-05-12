@@ -1019,7 +1019,6 @@ class enrol_oss_plugin extends enrol_plugin {
             if (!$cat_obj) {
                 debugging(self::$errorlogtag . 'autocreate/autoremove could not create teacher course context');
             }
-            context_coursecat::instance ( 0 )->mark_dirty ();
         }
         return $cat_obj;
     }
@@ -1064,7 +1063,6 @@ class enrol_oss_plugin extends enrol_plugin {
 				$cat_obj = self::create_category( $config->class_category, self::$idnumber_class_cat, get_string ( 'class_category_description', 'enrol_oss' ) );
 				if ($cat_obj) {
 					debugging ( self::$errorlogtag . "created class course category " . $cat_obj->id, DEBUG_DEVELOPER );
-					context_coursecat::instance ( 0 )->mark_dirty ();
 				} else {
 					debugging ( self::$errorlogtag . 'autocreate/autoremove could not create class course context' );
 				}

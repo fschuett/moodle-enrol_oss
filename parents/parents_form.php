@@ -3,7 +3,7 @@
 require_once($CFG->libdir.'/formslib.php');
 require_once($CFG->libdir.'/datalib.php');
 
-class parents_form extends moodleform {
+class enrol_oss_parents_form extends moodleform {
     function definition() {
 
         $mform =& $this->_form;

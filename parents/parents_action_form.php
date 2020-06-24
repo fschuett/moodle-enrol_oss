@@ -29,7 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir.'/formslib.php');
 require_once($CFG->libdir.'/datalib.php');
 
-class parents_action_form extends moodleform {
+class enrol_oss_parents_action_form extends moodleform {
     function definition() {
         global $CFG;
 

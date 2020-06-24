@@ -40,11 +40,11 @@ if( $parents_enabled )  {
         $SESSION->bulk_users = array();
     }
     // create the user filter form
-    $ufiltering = new parent_filtering();
+    $ufiltering = new enrol_oss_parent_filtering();
 
     // array of bulk operations
     // create the bulk operations form
-    $action_form = new parents_action_form();
+    $action_form = new enrol_oss_parents_action_form();
     if ($data = $action_form->get_data()) {
         if (!empty($data->updateparents)) {
             // update parents relationships
@@ -65,7 +65,7 @@ if( $parents_enabled )  {
         }
     }
 
-    $user_bulk_form = new parents_form(null, get_selection_data($ufiltering));
+    $user_bulk_form = new enrol_oss_parents_form(null, get_selection_data($ufiltering));
 
     if ($data = $user_bulk_form->get_data()) {
         if (!empty($data->addall)) {
@@ -107,7 +107,7 @@ if( $parents_enabled )  {
 
         // reset the form selections
         unset($_POST);
-        $user_bulk_form = new parents_form(null, get_selection_data($ufiltering));
+        $user_bulk_form = new enrol_oss_parents_form(null, get_selection_data($ufiltering));
     }
     // do output
     echo $OUTPUT->header();
@@ -125,7 +125,7 @@ if( $parents_enabled )  {
     echo $OUTPUT->header();
 
     echo $OUTPUT->heading(get_string('parents_list', 'enrol_oss'));
-    
+
     echo $OUTPUT->box_start('generalbox', 'notice');
     echo $OUTPUT->notification(get_string('parents_not_enabled','enrol_oss'), 'info');
     echo $OUTPUT->box_end();

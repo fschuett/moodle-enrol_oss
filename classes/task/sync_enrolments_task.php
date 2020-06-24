@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Scheduled task for processing oss classes enrolments.
+ * Scheduled task for processing oss enrolments.
  *
  * @package    enrol_oss
  * @copyright  2016 Frank Schütte
@@ -27,12 +27,12 @@ namespace enrol_oss\task;
 defined('MOODLE_INTERNAL') || die;
 
 /**
- * Simple task to run sync classes enrolments.
+ * Simple task to run sync enrolments.
  *
  * @copyright  2016 Frank Schütte
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class oss_sync_classes_task extends \core\task\scheduled_task {
+class sync_enrolments_task extends \core\task\scheduled_task {
 
     /**
      * Get a descriptive name for this task (shown to admins).
@@ -40,7 +40,7 @@ class oss_sync_classes_task extends \core\task\scheduled_task {
      * @return string
      */
     public function get_name() {
-        return get_string('ossclasssync', 'enrol_oss');
+        return get_string('osssync', 'enrol_oss');
     }
 
     /**
@@ -64,13 +64,13 @@ class oss_sync_classes_task extends \core\task\scheduled_task {
         }
 
         if (!enrol_is_enabled('oss')) {
-            debugging('[ENROL oss] '.get_string('pluginnotenabled', 'enrol_oss'));
+            debugging('[ENROL OSS] '.get_string('pluginnotenabled', 'enrol_oss'));
             return;
         }
 
         // Instance of enrol_flatfile_plugin.
         $plugin = enrol_get_plugin('oss');
-        $result = $plugin->sync_classes();
+        $result = $plugin->enrol_oss_sync();
         return $result;
 
     }

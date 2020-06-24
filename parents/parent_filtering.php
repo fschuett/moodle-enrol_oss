@@ -32,7 +32,7 @@
 require_once($CFG->dirroot.'/enrol/oss/parents/user_filter_userrole.php');
 require_once($CFG->dirroot.'/enrol/oss/parents/parent_filter_cohort.php');
 
-class parent_filtering extends user_filtering {
+class enrol_oss_parent_filtering extends user_filtering {
 
     /**
      * Contructor
@@ -60,8 +60,8 @@ class parent_filtering extends user_filtering {
         global $USER, $CFG, $DB, $SITE;
 
         switch ($fieldname) {
-            case 'userrole':  return new user_filter_userrole('userrole', get_string('userrole', 'enrol_oss'), $advanced);
-            case 'cohort':      return new parent_filter_cohort($advanced);
+            case 'userrole':  return new enrol_oss_user_filter_userrole('userrole', get_string('userrole', 'enrol_oss'), $advanced);
+            case 'cohort':      return new enrol_oss_parent_filter_cohort($advanced);
             default:  return parent::get_field($fieldname, $advanced);
         }
     }

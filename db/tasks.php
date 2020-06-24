@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $tasks = array(
     array(
-        'classname' => '\enrol_oss\task\oss_sync_task',
+        'classname' => '\enrol_oss\task\sync_enrolments_task',
         'blocking' => 0,
         'minute' => '51',
         'hour' => '*',
@@ -35,7 +35,7 @@ $tasks = array(
         'month' => '*'
     ),
     array(
-        'classname' => '\enrol_oss\task\oss_sync_classes_task',
+        'classname' => '\enrol_oss\task\sync_classes_task',
         'blocking' => 0,
         'minute' => '17',
         'hour' => '22',
@@ -44,7 +44,7 @@ $tasks = array(
         'month' => '*'
     ),
     array(
-        'classname' => '\enrol_oss\task\oss_sync_parents_task',
+        'classname' => '\enrol_oss\task\sync_parents_task',
         'blocking' => 0,
         'minute' => '31',
         'hour' => '21',

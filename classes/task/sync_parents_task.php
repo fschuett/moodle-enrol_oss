@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die;
  * @copyright  2016 Frank Schütte
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class oss_sync_parents_task extends \core\task\scheduled_task {
+class sync_parents_task extends \core\task\scheduled_task {
 
     /**
      * Get a descriptive name for this task (shown to admins).

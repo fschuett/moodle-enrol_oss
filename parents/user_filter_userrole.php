@@ -30,7 +30,7 @@ require_once($CFG->dirroot.'/user/filters/lib.php');
  * @copyright 2018 Frank Schütte
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class user_filter_userrole extends user_filter_type {
+class enrol_oss_user_filter_userrole extends user_filter_type {
 
     /**
      * Constructor
@@ -47,7 +47,7 @@ class user_filter_userrole extends user_filter_type {
      *
      * @deprecated since Moodle 3.1
      */
-    public function user_filter_userrole($name, $label, $advanced) {
+    public function enrol_oss_user_filter_userrole($name, $label, $advanced) {
         debugging('Use of class name as constructor is deprecated', DEBUG_DEVELOPER);
         self::__construct($name, $label, $advanced);
     }
@@ -58,15 +58,15 @@ class user_filter_userrole extends user_filter_type {
      */
     public function get_roles() {
         global $DB;
-    
+
         $params = array('contextlevel'=>CONTEXT_USER);
-    
+
         $sql = "SELECT r.id, r.name, r.shortname
                   FROM {role} r
              LEFT JOIN {role_context_levels} rcl ON (rcl.roleid = r.id AND rcl.contextlevel = :contextlevel)
                  WHERE rcl.id IS NOT NULL
               ORDER BY sortorder DESC";
-    
+
         $roles = $DB->get_records_sql($sql, $params);
         $roles = array(0 => get_string('anyrole', 'filters')) + role_fix_names($roles, null, ROLENAME_ALIAS, true);
         return $roles;

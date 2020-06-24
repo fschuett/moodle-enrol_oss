@@ -44,7 +44,7 @@ require_once($CFG->dirroot.'/user/filters/cohort.php');
  * @copyright 2018 Frank Schütte
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class parent_filter_cohort extends user_filter_cohort {
+class enrol_oss_parent_filter_cohort extends user_filter_cohort {
     /**
      * Constructor
      * @param boolean $advanced advanced form element flag
@@ -58,7 +58,7 @@ class parent_filter_cohort extends user_filter_cohort {
      *
      * @deprecated since Moodle 3.1
      */
-    public function user_filter_cohort($advanced) {
+    public function enrol_oss_parent_filter_cohort($advanced) {
         debugging('Use of class name as constructor is deprecated', DEBUG_DEVELOPER);
         self::__construct($advanced);
     }

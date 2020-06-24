@@ -1059,7 +1059,7 @@ class enrol_oss_plugin extends enrol_plugin {
 				'parent' => 0
 		), 'id', IGNORE_MULTIPLE );
 		if ( ! $cat_obj ) {
-			if ( $config->class_category_autocreate ) {
+		    if ( isset($config->class_category_autocreate) && $config->class_category_autocreate ) {
 				$cat_obj = self::create_category( $config->class_category, self::$idnumber_class_cat, get_string ( 'class_category_description', 'enrol_oss' ) );
 				if ($cat_obj) {
 					debugging ( self::$errorlogtag . "created class course category " . $cat_obj->id, DEBUG_DEVELOPER );
@@ -1084,7 +1084,7 @@ class enrol_oss_plugin extends enrol_plugin {
 	 */
 	private function get_classes_moodle($userid = "*") {
 		global $CFG;
-		
+
 		$ret = array ();
 		if ($userid != "*") {
 			$user = get_user_by_username($userid, 'id', null, IGNORE_MISSING);
@@ -1776,7 +1776,7 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     private function resort_categories($id) {
         global $CFG,$DB;
-        
+
         $cat = \core_course_category::get($id, MUST_EXIST, true); //alwaysreturnhidden
         if (empty($cat)) {
             debugging("Could not get $id course category for sorting.\n");
@@ -1829,7 +1829,7 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     private function teacher_add_category(&$user) {
         global $CFG, $DB;
-        
+
         if (empty($user->username) || empty($user->firstname) || empty($user->lastname)) {
         	debugging(self::$errorlogtag .
         			sprintf('teacher_add_category: data missing(userid:%s|firstname:%s|lastname:%s)',
@@ -1935,7 +1935,7 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     private function teacher_unassign_role($user, $cat) {
         global $CFG;
-        
+
         if (empty($user)){
             throw new coding_exception('Invalid call to teacher_unassign_role(), user cannot be empty.');
         }
@@ -1963,7 +1963,7 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     public static function create_category ($name, $idnumber, $description, $parent = 0, $sortorder = 0, $visible = 1) {
         global $CFG,$DB;
-        
+
         debugging(self::$errorlogtag . sprintf("create_category... %s (%s),\n                sortorder(%s) %s",
                  $name, $description, $sortorder, date("H:i:s")), DEBUG_DEVELOPER);
         $data = new stdClass();

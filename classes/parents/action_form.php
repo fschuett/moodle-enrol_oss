@@ -24,12 +24,14 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace enrol_oss\parents;
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->libdir.'/formslib.php');
 require_once($CFG->libdir.'/datalib.php');
 
-class enrol_oss_parents_action_form extends moodleform {
+class action_form extends moodleform {
     function definition() {
         global $CFG;
 

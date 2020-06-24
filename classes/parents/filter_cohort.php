@@ -35,6 +35,8 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace enrol_oss\parents;
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/user/filters/cohort.php');
@@ -44,23 +46,13 @@ require_once($CFG->dirroot.'/user/filters/cohort.php');
  * @copyright 2018 Frank Schütte
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class enrol_oss_parent_filter_cohort extends user_filter_cohort {
+class filter_cohort extends user_filter_cohort {
     /**
      * Constructor
      * @param boolean $advanced advanced form element flag
      */
     public function __construct($advanced) {
         parent::__construct('cohort', get_string('idnumber', 'core_cohort'), $advanced);
-    }
-
-    /**
-     * Old syntax of class constructor. Deprecated in PHP7.
-     *
-     * @deprecated since Moodle 3.1
-     */
-    public function enrol_oss_parent_filter_cohort($advanced) {
-        debugging('Use of class name as constructor is deprecated', DEBUG_DEVELOPER);
-        self::__construct($advanced);
     }
 
     /**

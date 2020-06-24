@@ -20,15 +20,12 @@
  * @package    enrol
  * @subpackage oss
  * @author     Frank Schütte
- * @copyright  2018 Frank Schütte <fschuett@gymhim.de>
+ * @copyright  2020 Frank Schütte <fschuett@gymhim.de>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require_once('../../../config.php');
 require_once($CFG->libdir.'/adminlib.php');
-require_once($CFG->dirroot.'/enrol/oss/parents/parents_form.php');
-require_once($CFG->dirroot.'/enrol/oss/parents/parents_action_form.php');
-require_once($CFG->dirroot.'/enrol/oss/parents/parent_filtering.php');
 require_once($CFG->dirroot.'/enrol/oss/parents/parentslib.php');
 
 admin_externalpage_setup('enrol_oss_parents');
@@ -40,11 +37,11 @@ if( $parents_enabled )  {
         $SESSION->bulk_users = array();
     }
     // create the user filter form
-    $ufiltering = new enrol_oss_parent_filtering();
+    $ufiltering = new \enrol_oss\parents\parent_filtering();
 
     // array of bulk operations
     // create the bulk operations form
-    $action_form = new enrol_oss_parents_action_form();
+    $action_form = new \enrol_oss\parents\action_form();
     if ($data = $action_form->get_data()) {
         if (!empty($data->updateparents)) {
             // update parents relationships
@@ -65,7 +62,7 @@ if( $parents_enabled )  {
         }
     }
 
-    $user_bulk_form = new enrol_oss_parents_form(null, get_selection_data($ufiltering));
+    $user_bulk_form = new \enrol_oss\parents\parents_form(null, get_selection_data($ufiltering));
 
     if ($data = $user_bulk_form->get_data()) {
         if (!empty($data->addall)) {
@@ -107,7 +104,7 @@ if( $parents_enabled )  {
 
         // reset the form selections
         unset($_POST);
-        $user_bulk_form = new enrol_oss_parents_form(null, get_selection_data($ufiltering));
+        $user_bulk_form = new \enrol_oss\parents\parents_form(null, get_selection_data($ufiltering));
     }
     // do output
     echo $OUTPUT->header();

@@ -23,6 +23,8 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace enrol_oss\parents;
+
 require_once($CFG->dirroot.'/user/filters/lib.php');
 
 /**
@@ -30,7 +32,7 @@ require_once($CFG->dirroot.'/user/filters/lib.php');
  * @copyright 2018 Frank Schütte
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class enrol_oss_user_filter_userrole extends user_filter_type {
+class filter_userrole extends user_filter_type {
 
     /**
      * Constructor
@@ -40,16 +42,6 @@ class enrol_oss_user_filter_userrole extends user_filter_type {
      */
     public function __construct($name, $label, $advanced) {
         parent::__construct($name, $label, $advanced);
-    }
-
-    /**
-     * Old syntax of class constructor. Deprecated in PHP7.
-     *
-     * @deprecated since Moodle 3.1
-     */
-    public function enrol_oss_user_filter_userrole($name, $label, $advanced) {
-        debugging('Use of class name as constructor is deprecated', DEBUG_DEVELOPER);
-        self::__construct($name, $label, $advanced);
     }
 
     /**

@@ -29,11 +29,11 @@
  */
 
 
-function settings_class_category_updated($full_name) {
+function enrol_oss_settings_class_category_updated($full_name) {
     global $CFG;
-    
+
     require_once $CFG->dirroot.'/enrol/oss/lib.php';
-    
+
     $config = get_config('enrol_oss');
     $classcat = enrol_oss_plugin::get_class_category($config);
     if ( $classcat ) {
@@ -41,9 +41,9 @@ function settings_class_category_updated($full_name) {
     }
 }
 
-function description_updated($groupname, $newvalue) {
+function enrol_oss_description_updated($groupname, $newvalue) {
     global $DB;
-    
+
     $data = new stdClass;
     $records = $DB->get_records_sql("SELECT g.id, g.courseid, c.shortname FROM {groups} g JOIN {course} c ON g.courseid = c.id WHERE g.name = ? ", array($groupname));
     foreach($records as $group) {
@@ -53,17 +53,17 @@ function description_updated($groupname, $newvalue) {
     }
 }
 
-function settings_class_teachers_group_description_updated($full_name) {
+function enrol_oss_settings_class_teachers_group_description_updated($full_name) {
     $newvalue = get_config('enrol_oss', 'class_teachers_group_description');
-    description_updated('teachers', $newvalue);
+    enrol_oss_description_updated('teachers', $newvalue);
 }
 
-function settings_class_students_group_description_updated($full_name) {
+function enrol_oss_settings_class_students_group_description_updated($full_name) {
     $newvalue = get_config('enrol_oss', 'class_students_group_description');
-    description_updated('students', $newvalue);
+    enrol_oss_description_updated('students', $newvalue);
 }
 
-function settings_class_parents_group_description_updated($full_name) {
+function enrol_oss_settings_class_parents_group_description_updated($full_name) {
     $newvalue = get_config('enrol_oss', 'class_parents_group_description');
-    description_updated('parents', $newvalue);
+    enrol_oss_description_updated('parents', $newvalue);
 }

@@ -164,7 +164,7 @@ if ($ADMIN->fulltree) {
     $settings_class_category = new admin_setting_configtext_trim_lower('enrol_oss/class_category',
     		get_string('class_category', 'enrol_oss'),
     		get_string('class_category_desc', 'enrol_oss'), get_string('class_category', 'enrol_oss'));
-    $settings_class_category->set_updatedcallback('settings_class_category_updated');
+    $settings_class_category->set_updatedcallback('enrol_oss_settings_class_category_updated');
     $settings->add($settings_class_category);
     $settings->add(new admin_setting_configcheckbox('enrol_oss/class_category_autocreate',
     		get_string('class_category_autocreate','enrol_oss'),
@@ -228,19 +228,19 @@ if ($ADMIN->fulltree) {
         get_string('class_teachers_group_description', 'enrol_oss'),
         get_string('class_teachers_group_description_desc', 'enrol_oss'),
         'teachers of class ', PARAM_TEXT);
-    $settings_class_teachers_group_description->set_updatedcallback('settings_class_teachers_group_description_updated');
+    $settings_class_teachers_group_description->set_updatedcallback('enrol_oss_settings_class_teachers_group_description_updated');
     $settings->add($settings_class_teachers_group_description);
     $settings_class_students_group_description = new admin_setting_configtext('enrol_oss/class_students_group_description',
         get_string('class_students_group_description', 'enrol_oss'),
         get_string('class_students_group_description_desc', 'enrol_oss'),
         'students of class ', PARAM_TEXT);
-    $settings_class_students_group_description->set_updatedcallback('settings_class_students_group_description_updated');
+    $settings_class_students_group_description->set_updatedcallback('enrol_oss_settings_class_students_group_description_updated');
     $settings->add($settings_class_students_group_description);
     $settings_class_parents_group_description = new admin_setting_configtext('enrol_oss/class_parents_group_description',
         get_string('class_parents_group_description', 'enrol_oss'),
         get_string('class_parents_group_description_desc', 'enrol_oss'),
         'parents of class ', PARAM_TEXT);
-    $settings_class_parents_group_description->set_updatedcallback('settings_class_parents_group_description_updated');
+    $settings_class_parents_group_description->set_updatedcallback('enrol_oss_settings_class_parents_group_description_updated');
     $settings->add($settings_class_parents_group_description);
 
 		// parents settings

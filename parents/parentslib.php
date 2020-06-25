@@ -32,10 +32,10 @@ if (!defined('MAX_BULK_USERS')) {
     define('MAX_BULK_USERS', 2000);
 }
 
-function add_selection_all($ufiltering) {
+function enrol_oss_add_selection_all($ufiltering) {
     global $SESSION, $DB, $CFG;
 
-    list($sqlwhere, $params) = $ufiltering->get_sql_filter("id<>:exguest AND deleted <> 1", array('exguest'=>$CFG->siteguest));
+    list($sqlwhere, $params) = $ufiltering->get_sql_filter("id<>:exguest AND deleted <> 1", array('exguest' => $CFG->siteguest));
 
     $rs = $DB->get_recordset_select('user', $sqlwhere, $params, 'fullname', 'id,'.$DB->sql_fullname().' AS fullname');
     foreach ($rs as $user) {
@@ -46,17 +46,17 @@ function add_selection_all($ufiltering) {
     $rs->close();
 }
 
-function format_parents_select_menu ($parents) {
+function enrol_oss_format_parents_select_menu ($parents) {
     global $DB;
     $menu = array();
-    if( !empty($parents) ) {
+    if (!empty($parents)) {
         $keys = array_keys($parents);
         list($in, $params) = $DB->get_in_or_equal($keys);
         $sqlwhere = "p.id $in";
         $sql = "SELECT p.id AS id, ".
                 $DB->sql_concat(
-                    $DB->sql_fullname('p.firstname', 'p.lastname'),"'('"," COALESCE(ch.fullname,'') ","')'")
-                ." AS fullname FROM {user} p LEFT OUTER JOIN 
+                    $DB->sql_fullname('p.firstname', 'p.lastname'), "'('", " COALESCE(ch.fullname, '') ", "')'")
+                ." AS fullname FROM {user} p LEFT OUTER JOIN
                 (
                     SELECT ".$DB->sql_fullname('ch.firstname', 'ch.lastname')." AS fullname,ra.userid AS elternid FROM {user} ch
                     JOIN {context} cx ON ch.id = cx.instanceid
@@ -72,22 +72,22 @@ function format_parents_select_menu ($parents) {
                 $menu[$key] = $value;
             }
         }
-	}
-	return $menu;
+    }
+    return $menu;
 }
 
-function get_selection_data($ufiltering) {
+function enrol_oss_get_selection_data($ufiltering) {
     global $SESSION, $DB, $CFG;
 
-    // get the SQL filter
-    list($sqlwhere, $params) = $ufiltering->get_sql_filter("id<>:exguest AND deleted <> 1", array('exguest'=>$CFG->siteguest));
+    // Get the SQL filter.
+    list($sqlwhere, $params) = $ufiltering->get_sql_filter("id<>:exguest AND deleted <> 1", array('exguest' => $CFG->siteguest));
 
-    $total  = $DB->count_records_select('user', "id<>:exguest AND deleted <> 1", array('exguest'=>$CFG->siteguest));
+    $total  = $DB->count_records_select('user', "id<>:exguest AND deleted <> 1", array('exguest' => $CFG->siteguest));
     $acount = $DB->count_records_select('user', $sqlwhere, $params);
     $scount = count($SESSION->bulk_users);
 
-    $userlist = array('acount'=>$acount, 'scount'=>$scount, 'ausers'=>false, 'susers'=>false, 'total'=>$total);
-    $userlist['ausers'] = format_parents_select_menu($DB->get_records_select_menu('user', $sqlwhere, $params, 'fullname', 
+    $userlist = array('acount' => $acount, 'scount' => $scount, 'ausers' => false, 'susers' => false, 'total' => $total);
+    $userlist['ausers'] = enrol_oss_format_parents_select_menu($DB->get_records_select_menu('user', $sqlwhere, $params, 'fullname',
         'id,'.$DB->sql_fullname().' AS fullname', 0, MAX_BULK_USERS));
 
     if ($scount) {
@@ -97,14 +97,14 @@ function get_selection_data($ufiltering) {
             $bulkusers = array_slice($SESSION->bulk_users, 0, MAX_BULK_USERS, true);
         }
         list($in, $inparams) = $DB->get_in_or_equal($bulkusers);
-        $userlist['susers'] = format_parents_select_menu($DB->get_records_select_menu('user', "id $in", $inparams, 'fullname', 
+        $userlist['susers'] = enrol_oss_format_parents_select_menu($DB->get_records_select_menu('user', "id $in", $inparams, 'fullname',
             'id,'.$DB->sql_fullname().' AS fullname'));
     }
 
     return $userlist;
 }
 
-function parents_update_parents() {
+function enrol_oss_parents_update_parents() {
     global $CFG;
     require_once($CFG->dirroot . '/enrol/oss/lib.php');
 

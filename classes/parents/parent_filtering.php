@@ -60,9 +60,12 @@ class parent_filtering extends user_filtering {
         global $USER, $CFG, $DB, $SITE;
 
         switch ($fieldname) {
-            case 'userrole':  return new \enrol_oss\parents\filter_userrole('userrole', get_string('userrole', 'enrol_oss'), $advanced);
-            case 'cohort':      return new \enrol_oss\parents\filter_cohort($advanced);
-            default:  return parent::get_field($fieldname, $advanced);
+            case 'userrole':
+return new \enrol_oss\parents\filter_userrole('userrole', get_string('userrole', 'enrol_oss'), $advanced);
+            case 'cohort':
+return new \enrol_oss\parents\filter_cohort($advanced);
+            default:
+return parent::get_field($fieldname, $advanced);
         }
     }
 

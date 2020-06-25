@@ -45,7 +45,7 @@ if( $parents_enabled )  {
     if ($data = $action_form->get_data()) {
         if (!empty($data->updateparents)) {
             // update parents relationships
-            parents_update_parents();
+            enrol_oss_parents_update_parents();
         } else if (!empty($data->dosetpassword)) {
             // update selected users passwords
             redirect(new moodle_url($CFG->wwwroot.'/enrol/oss/parents/parents_set_passwords.php', array('newpassword' => $data->newpassword)));
@@ -62,16 +62,16 @@ if( $parents_enabled )  {
         }
     }
 
-    $user_bulk_form = new \enrol_oss\parents\parents_form(null, get_selection_data($ufiltering));
+    $user_bulk_form = new \enrol_oss\parents\parents_form(null, enrol_oss_get_selection_data($ufiltering));
 
     if ($data = $user_bulk_form->get_data()) {
         if (!empty($data->addall)) {
-            add_selection_all($ufiltering);
+            enrol_oss_add_selection_all($ufiltering);
 
         } else if (!empty($data->addsel)) {
             if (!empty($data->ausers)) {
                 if (in_array(0, $data->ausers)) {
-                    add_selection_all($ufiltering);
+                    enrol_oss_add_selection_all($ufiltering);
                 } else {
                     foreach($data->ausers as $userid) {
                         if ($userid == -1) {
@@ -85,12 +85,12 @@ if( $parents_enabled )  {
             }
 
         } else if (!empty($data->removeall)) {
-            $SESSION->bulk_users= array();
+            $SESSION->bulk_users = array();
 
         } else if (!empty($data->removesel)) {
             if (!empty($data->susers)) {
                 if (in_array(0, $data->susers)) {
-                    $SESSION->bulk_users= array();
+                    $SESSION->bulk_users = array();
                 } else {
                     foreach($data->susers as $userid) {
                         if ($userid == -1) {
@@ -104,7 +104,7 @@ if( $parents_enabled )  {
 
         // reset the form selections
         unset($_POST);
-        $user_bulk_form = new \enrol_oss\parents\parents_form(null, get_selection_data($ufiltering));
+        $user_bulk_form = new \enrol_oss\parents\parents_form(null, enrol_oss_get_selection_data($ufiltering));
     }
     // do output
     echo $OUTPUT->header();

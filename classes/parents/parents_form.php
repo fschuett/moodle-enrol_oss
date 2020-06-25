@@ -86,7 +86,6 @@ class parents_form extends moodleform {
         $objs[1] =& $mform->createElement('select', 'susers', get_string('selected', 'bulkusers'), $schoices, 'size="15"');
         $objs[1]->setMultiple(true);
 
-
         $grp =& $mform->addElement('group', 'usersgrp', get_string('users', 'bulkusers'), $objs, ' ', false);
         $mform->addHelpButton('usersgrp', 'users', 'bulkusers');
 

@@ -51,7 +51,7 @@ class filter_userrole extends user_filter_type {
     public function get_roles() {
         global $DB;
 
-        $params = array('contextlevel'=>CONTEXT_USER);
+        $params = array('contextlevel' => CONTEXT_USER);
 
         $sql = "SELECT r.id, r.name, r.shortname
                   FROM {role} r
@@ -92,9 +92,9 @@ class filter_userrole extends user_filter_type {
             if(array_key_exists($inverted, $formdata)) {
                 return array('value' => (int)$formdata->$field,
                              'not'   => (string)$formdata->$inverted);
-			} else {
+            } else {
                 return array('value' => (int)$formdata->$field);
-			}
+            }
         }
         return false;
     }
@@ -108,10 +108,10 @@ class filter_userrole extends user_filter_type {
         global $CFG;
         $value = (int)$data['value'];
         if( array_key_exists('not', $data) ){
-			$not = 'not';
-		} else {
-		    $not = '';
-		}
+            $not = 'not';
+        } else {
+            $not = '';
+        }
         $timenow = round(time(), 100);
 
         $sql = "id $not IN (SELECT userid
@@ -131,10 +131,10 @@ class filter_userrole extends user_filter_type {
 
         $role = $DB->get_record('role', array('id' => $data['value']));
         if( array_key_exists('not', $data) ){
-			$not = get_string('userrole_inverted_label', 'enrol_oss');
-		} else {
-		    $not = '';
-		}
+            $not = get_string('userrole_inverted_label', 'enrol_oss');
+        } else {
+            $not = '';
+        }
         $a = new stdClass();
         $a->label = $this->_label;
         $a->value = $not.'"'.role_get_name($role).'"';

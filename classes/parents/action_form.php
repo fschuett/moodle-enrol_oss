@@ -38,7 +38,7 @@ class action_form extends moodleform {
         $mform =& $this->_form;
 
         $syscontext = context_system::instance();
-        $actions = array(0=>get_string('choose').'...');
+        $actions = array(0 => get_string('choose').'...');
         if (has_capability('moodle/user:update', $syscontext)) {
             $actions[1] = get_string('confirm');
         }

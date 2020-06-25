@@ -44,13 +44,13 @@ if ($ADMIN->fulltree) {
 
     // Heading.
     $settings->add(new admin_setting_heading('enrol_oss_settings',
-    		get_string('pluginname','enrol_oss'),
+            get_string('pluginname','enrol_oss'),
             get_string('pluginname_desc', 'enrol_oss')));
 
     // Common settings.
     $settings->add(new admin_setting_heading('enrol_oss_common_settings',
             get_string('common_settings', 'enrol_oss'),
-    		get_string('common_settings_desc', 'enrol_oss')));
+            get_string('common_settings_desc', 'enrol_oss')));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/contexts',
             get_string('contexts_key', 'enrol_oss'),
             get_string('contexts', 'enrol_oss'), 'ou=group,dc=oss,dc=local'));
@@ -68,7 +68,7 @@ if ($ADMIN->fulltree) {
     // Teachers settings.
     $settings->add(new admin_setting_heading('enrol_oss_teacher_settings',
             get_string('teacher_settings', 'enrol_oss'),
-    		get_string('teacher_settings_desc','enrol_oss')));
+            get_string('teacher_settings_desc','enrol_oss')));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/teachers_group_name',
             get_string('teachers_group_name_key', 'enrol_oss'),
             get_string('teachers_group_name', 'enrol_oss'), 'TEACHERS'));
@@ -87,7 +87,7 @@ if ($ADMIN->fulltree) {
     // Teachers context settings.
     $settings->add(new admin_setting_heading('enrol_oss_teachers_context_settings',
             get_string('teachers_context_settings', 'enrol_oss'),
-    		get_string('teachers_context_settings_desc','enrol_oss')));
+            get_string('teachers_context_settings_desc','enrol_oss')));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/teachers_course_context',
             get_string('teachers_course_context_key', 'enrol_oss'),
             get_string('teachers_course_context', 'enrol_oss'), 'Lehrer'));
@@ -102,7 +102,7 @@ if ($ADMIN->fulltree) {
     if (!during_initial_install()) {
         $options = get_default_enrol_roles(context_system::instance());
         $courseteachers = get_all_roles();
-        $courseteacher = NULL;
+        $courseteacher = null;
         foreach ($courseteachers as $id => $record) {
             if ($record->shortname == 'ccteacher') {
                 $courseteacher = $record;
@@ -133,7 +133,7 @@ if ($ADMIN->fulltree) {
     // Students settings.
     $settings->add(new admin_setting_heading('enrol_oss_students_settings',
             get_string('students_settings', 'enrol_oss'),
-    		get_string('students_settings_desc', 'enrol_oss')));
+            get_string('students_settings_desc', 'enrol_oss')));
     $settings->add(new admin_setting_configtext('enrol_oss/students_group_name',
             get_string('students_group_name','enrol_oss'),
             get_string('students_group_name_desc', 'enrol_oss'), 'STUDENTS'));
@@ -156,46 +156,46 @@ if ($ADMIN->fulltree) {
 
     // Class settings.
     $settings->add(new admin_setting_heading('enrol_oss_class_settings',
-    		get_string('class_settings','enrol_oss'),
-    		get_string('class_settings_desc','enrol_oss')));
+            get_string('class_settings','enrol_oss'),
+            get_string('class_settings_desc','enrol_oss')));
     $settings->add(new admin_setting_configcheckbox('enrol_oss/classes_enabled',
-		get_string('classes_enabled', 'enrol_oss'),
-		get_string('classes_enabled_desc', 'enrol_oss'), 0));
+    get_string('classes_enabled', 'enrol_oss'),
+    get_string('classes_enabled_desc', 'enrol_oss'), 0));
     $settings_class_category = new admin_setting_configtext_trim_lower('enrol_oss/class_category',
-    		get_string('class_category', 'enrol_oss'),
-    		get_string('class_category_desc', 'enrol_oss'), get_string('class_category', 'enrol_oss'));
+            get_string('class_category', 'enrol_oss'),
+            get_string('class_category_desc', 'enrol_oss'), get_string('class_category', 'enrol_oss'));
     $settings_class_category->set_updatedcallback('enrol_oss_settings_class_category_updated');
     $settings->add($settings_class_category);
     $settings->add(new admin_setting_configcheckbox('enrol_oss/class_category_autocreate',
-    		get_string('class_category_autocreate','enrol_oss'),
-    		get_string('class_category_autocreate_desc','enrol_oss'),1));
+            get_string('class_category_autocreate','enrol_oss'),
+            get_string('class_category_autocreate_desc','enrol_oss'),1));
     $settings->add(new admin_setting_configcheckbox('enrol_oss/class_autocreate',
-    		get_string('class_autocreate','enrol_oss'),
-    		get_string('class_autocreate_desc','enrol_oss'),1));
+            get_string('class_autocreate','enrol_oss'),
+            get_string('class_autocreate_desc','enrol_oss'),1));
     $settings->add(new admin_setting_configcheckbox('enrol_oss/class_autoremove',
-    		get_string('class_autoremove','enrol_oss'),
-    		get_string('class_autoremove_desc','enrol_oss'),1));
+            get_string('class_autoremove','enrol_oss'),
+            get_string('class_autoremove_desc','enrol_oss'),1));
     $enrol_oss_courses = array();
     $enrol_oss_coursenames = $DB->get_records_sql('SELECT * FROM {course} ORDER BY fullname');
     foreach ($enrol_oss_coursenames as $key => $coursename) {
-	$enrol_oss_courses[$coursename->id] = $coursename->fullname . '(' . $coursename->id . ')';
+        $enrol_oss_courses[$coursename->id] = $coursename->fullname . '(' . $coursename->id . ')';
     }
     $enrol_oss_courses[0] = get_string('class_template_none','enrol_oss');
     $settings->add(new admin_setting_configselect('enrol_oss/class_template',
-    		get_string('class_template', 'enrol_oss'),
-    		get_string('class_template_desc', 'enrol_oss'), 0, $enrol_oss_courses));
+            get_string('class_template', 'enrol_oss'),
+            get_string('class_template_desc', 'enrol_oss'), 0, $enrol_oss_courses));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/class_attribute',
-		get_string('class_attribute','enrol_oss'),
-		get_string('class_attribute_desc','enrol_oss'), 'groupType'));
+    get_string('class_attribute','enrol_oss'),
+    get_string('class_attribute_desc','enrol_oss'), 'groupType'));
     $settings->add(new admin_setting_configcheckbox('enrol_oss/class_use_prefixes',
-		get_string('class_use_prefixes','enrol_oss'),
-		get_string('class_use_prefixes_desc','enrol_oss'),0));
+    get_string('class_use_prefixes','enrol_oss'),
+    get_string('class_use_prefixes_desc','enrol_oss'),0));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/class_prefixes',
-    		get_string('class_prefixes', 'enrol_oss'),
-    		get_string('class_prefixes_desc', 'enrol_oss'), '05,06,07,08,09,10,11,12,13'));
+            get_string('class_prefixes', 'enrol_oss'),
+            get_string('class_prefixes_desc', 'enrol_oss'), '05,06,07,08,09,10,11,12,13'));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/class_attribute_value',
-		get_string('class_attribute_value','enrol_oss'),
-		get_string('class_attribute_value_desc','enrol_oss'), 'class'));
+    get_string('class_attribute_value','enrol_oss'),
+    get_string('class_attribute_value_desc','enrol_oss'), 'class'));
     if (!during_initial_install()) {
         $options = get_default_enrol_roles(context_system::instance());
         $teacher = get_archetype_roles('editingteacher');
@@ -222,8 +222,8 @@ if ($ADMIN->fulltree) {
     }
     // class group settings
     $settings->add(new admin_setting_configcheckbox('enrol_oss/groups_enabled',
-		get_string('groups_enabled', 'enrol_oss'),
-		get_string('groups_enabled_desc', 'enrol_oss'), 0));
+    get_string('groups_enabled', 'enrol_oss'),
+    get_string('groups_enabled_desc', 'enrol_oss'), 0));
     $settings_class_teachers_group_description = new admin_setting_configtext('enrol_oss/class_teachers_group_description',
         get_string('class_teachers_group_description', 'enrol_oss'),
         get_string('class_teachers_group_description_desc', 'enrol_oss'),
@@ -243,19 +243,19 @@ if ($ADMIN->fulltree) {
     $settings_class_parents_group_description->set_updatedcallback('enrol_oss_settings_class_parents_group_description_updated');
     $settings->add($settings_class_parents_group_description);
 
-		// parents settings
+    // parents settings
     $settings->add(new admin_setting_heading('enrol_oss_parents_settings',
-    		get_string('parents_settings','enrol_oss'),
-    		get_string('parents_settings_desc','enrol_oss')));
+            get_string('parents_settings','enrol_oss'),
+            get_string('parents_settings_desc','enrol_oss')));
     $settings->add(new admin_setting_configcheckbox('enrol_oss/parents_enabled',
-		get_string('parents_enabled', 'enrol_oss'),
-		get_string('parents_enabled_desc', 'enrol_oss'), 0));
+    get_string('parents_enabled', 'enrol_oss'),
+    get_string('parents_enabled_desc', 'enrol_oss'), 0));
     $settings->add(new admin_setting_configcheckbox('enrol_oss/parents_autocreate',
-		get_string('parents_autocreate', 'enrol_oss'),
-		get_string('parents_autocreate_desc', 'enrol_oss'), 0));
+    get_string('parents_autocreate', 'enrol_oss'),
+    get_string('parents_autocreate_desc', 'enrol_oss'), 0));
     $settings->add(new admin_setting_configcheckbox('enrol_oss/parents_autoremove',
-		get_string('parents_autoremove', 'enrol_oss'),
-		get_string('parents_autoremove_desc', 'enrol_oss'), 0));
+    get_string('parents_autoremove', 'enrol_oss'),
+    get_string('parents_autoremove_desc', 'enrol_oss'), 0));
     if (!during_initial_install()) {
         $options = role_get_names(null, ROLENAME_ALIAS, true);
         $settings->add(new admin_setting_configselect('enrol_oss/parents_role',

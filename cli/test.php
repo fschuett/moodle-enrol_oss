@@ -46,7 +46,7 @@ require(dirname(dirname(dirname(dirname(__FILE__)))).'/config.php');
 require_once($CFG->libdir.'/clilib.php');
 
 // Now get cli options.
-list($options, $unrecognized) = cli_get_params(array('help'=>false), array('h'=>'help'));
+list($options, $unrecognized) = cli_get_params(array('help' => false), array('h' => 'help'));
 
 if ($unrecognized) {
     $unrecognized = implode("\n  ", $unrecognized);
@@ -92,7 +92,7 @@ $result = 0;
 
 // Update enrolments.
 $enrol = enrol_get_plugin('oss');
-// Hier den zu testenden Befehl eintragen:
+// Hier den zu testenden Befehl eintragen.
 $enrol->repair_teachers_contexts();
 
 exit($result);

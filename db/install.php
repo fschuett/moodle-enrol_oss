@@ -32,7 +32,7 @@ function xmldb_enrol_oss_install() {
 
     // Move coursecreator roles from oss to enrol_oss.
     echo "move old coursecreator assignments from oss to enrol_oss\n";
-    $role = $DB->get_record('role', array('shortname'=>'coursecreator'));
+    $role = $DB->get_record('role', array('shortname' => 'coursecreator'));
     if ($role) {
         if($records = $DB->get_recordset_select('role_assignments', "(roleid='" . $role->id . "' and component='oss')")) {
             foreach ($records as $record) {
@@ -44,7 +44,7 @@ function xmldb_enrol_oss_install() {
 
     // Remove role assignments oss.
     echo "remove all remaining oss assignments\n";
-    $DB->delete_records('role_assignments', array('component'=>'oss'));
+    $DB->delete_records('role_assignments', array('component' => 'oss'));
 
     // Create the category teacher role (ccteacher).
     if (!$DB->record_exists('role', array('shortname' => 'ccteacher'))) {

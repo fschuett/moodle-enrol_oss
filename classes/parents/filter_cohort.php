@@ -46,7 +46,7 @@ require_once($CFG->dirroot.'/user/filters/cohort.php');
  * @copyright 2018 Frank Schütte
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class filter_cohort extends user_filter_cohort {
+class filter_cohort extends \user_filter_cohort {
     /**
      * Constructor
      * @param boolean $advanced advanced form element flag

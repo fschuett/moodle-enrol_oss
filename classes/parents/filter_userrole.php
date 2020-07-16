@@ -32,7 +32,7 @@ require_once($CFG->dirroot.'/user/filters/lib.php');
  * @copyright 2018 Frank Schütte
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class filter_userrole extends user_filter_type {
+class filter_userrole extends \user_filter_type {
 
     /**
      * Constructor
@@ -135,7 +135,7 @@ class filter_userrole extends user_filter_type {
         } else {
             $not = '';
         }
-        $a = new stdClass();
+        $a = new \stdClass();
         $a->label = $this->_label;
         $a->value = $not.'"'.role_get_name($role).'"';
         return get_string('userrolelabel', 'enrol_oss', $a);

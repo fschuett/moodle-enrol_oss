@@ -32,7 +32,9 @@
 
 namespace enrol_oss\parents;
 
-class parent_filtering extends user_filtering {
+require_once($CFG->dirroot.'/user/filters/lib.php');
+
+class parent_filtering extends \user_filtering {
 
     /**
      * Contructor

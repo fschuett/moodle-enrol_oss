@@ -31,7 +31,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir.'/formslib.php');
 require_once($CFG->libdir.'/datalib.php');
 
-class parents_form extends moodleform {
+class parents_form extends \moodleform {
     function definition() {
 
         $mform =& $this->_form;
@@ -48,7 +48,7 @@ class parents_form extends moodleform {
             if ($total == $acount) {
                 $achoices[0] = get_string('allusers', 'bulkusers', $total);
             } else {
-                $a = new stdClass();
+                $a = new \stdClass();
                 $a->total  = $total;
                 $a->count = $acount;
                 $achoices[0] = get_string('allfilteredusers', 'bulkusers', $a);
@@ -64,7 +64,7 @@ class parents_form extends moodleform {
         }
 
         if (is_array($susers)) {
-            $a = new stdClass();
+            $a = new \stdClass();
             $a->total  = $total;
             $a->count = $scount;
             $schoices[0] = get_string('allselectedusers', 'bulkusers', $a);

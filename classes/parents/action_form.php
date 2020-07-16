@@ -31,13 +31,13 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir.'/formslib.php');
 require_once($CFG->libdir.'/datalib.php');
 
-class action_form extends moodleform {
+class action_form extends \moodleform {
     function definition() {
         global $CFG;
 
         $mform =& $this->_form;
 
-        $syscontext = context_system::instance();
+        $syscontext = \context_system::instance();
         $actions = array(0 => get_string('choose').'...');
         if (has_capability('moodle/user:update', $syscontext)) {
             $actions[1] = get_string('confirm');

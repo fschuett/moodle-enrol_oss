@@ -175,9 +175,9 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configcheckbox('enrol_oss/class_autoremove',
             get_string('class_autoremove','enrol_oss'),
             get_string('class_autoremove_desc','enrol_oss'),1));
-    $settings->add(new admin_setting_configcheckbox('enrol_oss/class_allstudents',
-            get_string('class_allstudents','enrol_oss'),
-            get_string('class_allstudents_desc', 'enrol_oss'),1));
+    $settings->add(new admin_setting_configcheckbox('enrol_oss/class_all_students',
+            get_string('class_all_students','enrol_oss'),
+            get_string('class_all_students_desc', 'enrol_oss'),1));
     $settings->add(new admin_setting_configcheckbox('enrol_oss/class_age_groups',
             get_string('class_age_groups','enrol_oss'),
             get_string('class_age_groups_desc','enrol_oss'),1));

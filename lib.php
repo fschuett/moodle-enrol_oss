@@ -43,8 +43,6 @@ class enrol_oss_plugin extends enrol_plugin {
     protected $attic_obj;
     protected $class_obj;
     protected $userid_regex;
-    static protected $class_all_students = 'allstds';
-    static protected $class_age_groups = 'agegrp';
 
 
     /**
@@ -1195,10 +1193,12 @@ class enrol_oss_plugin extends enrol_plugin {
     }
 
     private static function get_localname($class) {
-        if (preg_match("/^".self::$class_all_students."/", $class)) {
+        debugging(self::$errorlogtag . "get_localname($class) started...\n");
+        if (preg_match("/^".get_string("class_all_students_shortname", "enrol_oss")."/", $class)) {
             return get_string("class_all_students_localname", "enrol_oss");
-        } elseif (preg_match("/^".self::$class_age_groups."*/", $class)) {
-            return get_string("class_age_groups_localname", "enrol_oss")." ".$class;
+        } elseif (preg_match("/^".get_string("class_age_groups_shortname", "enrol_oss")."*/", $class)) {
+            return get_string("class_age_groups_localname", "enrol_oss"). " "
+                . str_replace(get_string("class_age_groups_shortname", "enrol_oss"),"", $class);
         } else {
             return get_string("class_localname","enrol_oss") . " " . $class;
         }
@@ -1210,13 +1210,15 @@ class enrol_oss_plugin extends enrol_plugin {
      * @param string $class
      * @param integer $catid
      * @param number $template
+     * @return course object|false
      */
     private function create_class($class, $catid, $template = 0) {
         global $CFG;
         require_once ($CFG->dirroot . '/course/externallib.php');
         require_once ($CFG->dirroot . '/course/lib.php');
+        $course = false;
         $fullname = self::get_localname($class);
-        debugging(self::$errorlogtag . "create_class ($class, $catid, $template) with local name $fullname started...\n");
+        debugging(self::$errorlogtag . "create_class (shortname:$class,category:$catid,template:$template) with fullname $fullname started...\n");
         if (!$template) {
             $data = new stdclass();
             $data->shortname = $class;
@@ -1224,19 +1226,21 @@ class enrol_oss_plugin extends enrol_plugin {
             $data->visible = 1;
             $data->category = $catid;
             try {
-                $courseid = create_course($data);
+                $course = create_course($data);
+                mtrace(self::$errorlogtag . "create_class (shortname:$class,fullname:$fullname) completed.\n");
             } catch ( Exception $e ) {
-                debugging(self::$errorlogtag . "create_class ($class) fehlgeschlagen: ".$e->getMessage()."\n");
+                debugging(self::$errorlogtag . "create_class (shortname:$class,fullname:$fullname) failed: ".$e->getMessage()."\n");
             }
         } else {
-            debugging(self::$errorlogtag . "duplicate_course(".$template.",".$fullname.",".$class.",".$catid.")\n");
             try {
                 $course = core_course_external::duplicate_course($template, $fullname, $class, $catid, 1);
-                debugging(self::$errorlogtag . "duplicate_course(".$fullname." completed\n");
+                $course = get_course($course["id"], false);
+                mtrace(self::$errorlogtag . "duplicate_course(shortname:$class,fullname:$fullname) completed.\n");
             } catch ( Exception $e ) {
-                debugging(self::$errorlogtag . "duplicate_course ($class) fehlgeschlagen: ".$e->getMessage()."\n");
+                debugging(self::$errorlogtag . "duplicate_course (shortname:$class,fullname:$fullname) failed: ".$e->getMessage()."\n");
             }
         }
+        return $course;
     }
 
     /**
@@ -1282,6 +1286,7 @@ class enrol_oss_plugin extends enrol_plugin {
             $this->sync_classes_enrolments_user($userid);
         } else {
             $this->sync_classes_enrolments();
+            $this->sync_collections_enrolments();
         }
     }
 
@@ -1381,11 +1386,7 @@ class enrol_oss_plugin extends enrol_plugin {
                 debugging(self::$errorlogtag . "sync_classes_enrolments($class): cannot get enrol_instance, ignoring.\n");
                 continue;
             }
-            $mdl_user_objects = get_enrolled_users($context);
-            $mdl_members = array();
-            foreach($mdl_user_objects as $user) {
-                $mdl_members[] = $user->username;
-            }
+            $mdl_members = self::get_enrolled_usernames($context);
             $this->class_enrolunenrol($course, $enrol_instance, $mdl_members, $ldap_members);
         }
     }
@@ -1623,11 +1624,10 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     /**
      * get array of in course enrolled users
-     * @param course $course
+     * @param course_context $context
      * @return string[]
      */
-    private static function get_enrolled_usernames($course) {
-        $context = context_course::instance($course->id);
+    private static function get_enrolled_usernames($context) {
         $mdl_user_objects = get_enrolled_users($context);
         $enrolled = array();
         foreach($mdl_user_objects as $user) {
@@ -1645,7 +1645,8 @@ class enrol_oss_plugin extends enrol_plugin {
         $enrolled = array();
         foreach ($courselist as $classrecord) {
             if ($classrecord->visible && preg_match($regexp, $classrecord->shortname)) {
-                $enrolled[] = get_enrolled_usernames($classrecord);
+                $context = context_course::instance($classrecord->id);
+                $enrolled = array_merge($enrolled, self::get_enrolled_usernames($context));
             }
         }
         return $enrolled;
@@ -1663,16 +1664,17 @@ class enrol_oss_plugin extends enrol_plugin {
         $courselist = $classcat->get_courses();
         foreach ($courselist as $record) {
             if ($record->visible && $record->shortname == $shortname) {
-                // found all_stds course
+                debugging(self::$errorlogtag . "classes_get_course: found course $shortname with id ".$record->id.".\n");
                 return $record;
             }
         }
         if ($this->config->class_autocreate) {
-            $course = $this->create_class($shortname, $classcat, $template);
+            $course = $this->create_class($shortname, $classcat->id, $template);
             if ($course) {
+                debugging(self::$errorlogtag . "classes_get_course: created course $shortname with id ".$record->id.".\n");
                 return $course;
             } else {
-                trigger_error(self::$errorlogtag . 'get_course with autocreate: '+$shortname+' is missing and autocreation is disabled or failed.');
+                trigger_error(self::$errorlogtag . 'get_course with autocreate: '.$shortname.' is missing and autocreation is disabled or failed.');
                 return false;
             }
         }
@@ -1687,7 +1689,7 @@ class enrol_oss_plugin extends enrol_plugin {
 
         $course_allstds = NULL;
 
-        if (! $this->config->class_allstudents && ! $this->config->class_age_groups) {
+        if (! $this->config->class_all_students && ! $this->config->class_age_groups) {
             return;
         }
         $classcat = self::get_class_category($this->config);
@@ -1698,45 +1700,54 @@ class enrol_oss_plugin extends enrol_plugin {
         if ($template) {
             $template = $template->id;
         }
+        mtrace(self::$errorlogtag . " starting collection classes synchronization...");
         $courselist = $classcat->get_courses();
         // process all students class
-        if ($this->config->class_allstudents) {
-            $course_allstds = $this->classes_get_course($courselist, self::$class_all_students, $template);
+        if ($this->config->class_all_students) {
+            $course_allstds = $this->classes_get_course($classcat, get_string("class_all_students_shortname","enrol_oss"), $template);
             if ($course_allstds) {
                 // collect users from class allstds
-                $members_ist = self::get_enrolled_usernames($course_allstds);
+                $context = context_course::instance($course_allstds->id);
+                $members_ist = self::get_enrolled_usernames($context);
                 // now collect users from all classes
                 $regexp = $this->config->class_prefixes;
                 $regexp = "/^(" . implode("*|", explode(',', $regexp)) . "*)/";
                 $members_soll = self::classes_get_enrolled($courselist, $regexp);
                 $enrol_instance = $this->get_enrol_instance($course_allstds);
                 if (!$enrol_instance) {
-                    debugging(self::$errorlogtag . "sync_collections_enrolments(".self::$all_stds."): cannot get enrol_instance, ignoring.\n");
-                    continue;
+                    debugging(self::$errorlogtag . "sync_collections_enrolments(".get_string("class_all_students_shortname","enrol_oss")."): cannot get enrol_instance, ignoring.\n");
+                } else {
+                    $this->class_enrolunenrol($course_allstds, $enrol_instance, $members_ist, $members_soll);
                 }
-                $this->class_enrolunenrol($course_allstds, $enrol_instance, $members_ist, $members_soll);
             }
+            mtrace(self::$errorlogtag . " all students class synchronized.");
         }
         // process age groups classes
         if ($this->config->class_age_groups) {
-            $ages[] = explode(',', $this->config->class_prefixes);
+            $ages = explode(',', $this->config->class_prefixes);
             foreach ($ages as $age) {
                 // get age group class
-                $course = $this->classes_get_course($classcat, self::$class_age_groups . $age, $template);
-                // get members ist
-                $members_ist = self::get_enrolled_usernames($course);
-                // get members soll
-                $regexp = "/^".$age."*/";
-                $members_soll = self::classes_get_enrolled($courselist, $regexp);
-                // enrol/unenrol
-                $enrol_instance = $this->get_enrol_instance($course);
-                if (!$enrol_instance) {
-                    debugging(self::$errorlogtag . "sync_collections_enrolments(".self::$class_age_groups.$age."): cannt get enrol_instance, ignoring.\n");
-                    continue;
+                $shortname = get_string("class_age_groups_shortname","enrol_oss") . $age;
+                $course = $this->classes_get_course($classcat, $shortname, $template);
+                if ($course) {
+                    // get members ist
+                    $context = context_course::instance($course->id);
+                    $members_ist = self::get_enrolled_usernames($context);
+                    // get members soll
+                    $regexp = "/^".$age."*/";
+                    $members_soll = self::classes_get_enrolled($courselist, $regexp);
+                    // enrol/unenrol
+                    $enrol_instance = $this->get_enrol_instance($course);
+                    if (!$enrol_instance) {
+                        debugging(self::$errorlogtag . "sync_collections_enrolments($shortname): cannt get enrol_instance, ignoring.\n");
+                    } else {
+                        $this->class_enrolunenrol($course, $enrol_instance, $members_ist, $members_soll);
+                    }
                 }
-                $this->class_enrolunenrol($course, $enrol_instance, $members_ist, $members_soll);
+                mtrace(self::$errorlogtag . " age group $shortname synchronized.");
             }
         }
+        mtrace(self::$errorlogtag . " collection classes synchronization finished.");
     }
 
     /*------------------------------------------------------

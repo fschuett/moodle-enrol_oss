@@ -55,6 +55,7 @@ The number is used to create the relationship between parent and student automat
 
 Changelog
 ---------
+2020-07-16 add all students and age groups classes
 2018-02-06 add parent account management
 2017-11-28 add classes creation/removing and enrolment
 2017-08-19 fixed dn handling, coursecat movements
@@ -62,4 +63,4 @@ Changelog
 2016-11-30 initial port from enrol_openlml
 
 Hildesheim, Germany
-Frank Schütte,2018(fschuett@gymhim.de)
+Frank Schütte,2020(fschuett@gymhim.de)

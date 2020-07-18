@@ -43,6 +43,8 @@ class enrol_oss_plugin extends enrol_plugin {
     protected $attic_obj;
     protected $class_obj;
     protected $userid_regex;
+    static protected $class_all_students = 'allstds';
+    static protected $class_age_groups = 'agegrp';
 
 
     /**
@@ -1118,6 +1120,7 @@ class enrol_oss_plugin extends enrol_plugin {
 
     /**
      * search all classes in ldap according to class_prefixes (for a specific user id)
+     * and add all_students and age_group class
      *
      * @return array
      */
@@ -1191,6 +1194,16 @@ class enrol_oss_plugin extends enrol_plugin {
         }
     }
 
+    private static function get_localname($class) {
+        if (preg_match("/^".self::$class_all_students."/", $class)) {
+            return get_string("class_all_students_localname", "enrol_oss");
+        } elseif (preg_match("/^".self::$class_age_groups."*/", $class)) {
+            return get_string("class_age_groups_localname", "enrol_oss")." ".$class;
+        } else {
+            return get_string("class_localname","enrol_oss") . " " . $class;
+        }
+    }
+
     /**
      * create a new class either as duplicate from $template or as new empty course.
      *
@@ -1202,8 +1215,8 @@ class enrol_oss_plugin extends enrol_plugin {
         global $CFG;
         require_once ($CFG->dirroot . '/course/externallib.php');
         require_once ($CFG->dirroot . '/course/lib.php');
-        debugging(self::$errorlogtag . "create_class ($class, $catid, $template) started...");
-        $fullname = get_string("class_localname","enrol_oss") . " " . $class;
+        $fullname = self::get_localname($class);
+        debugging(self::$errorlogtag . "create_class ($class, $catid, $template) with local name $fullname started...\n");
         if (!$template) {
             $data = new stdclass();
             $data->shortname = $class;
@@ -1310,8 +1323,50 @@ class enrol_oss_plugin extends enrol_plugin {
         return $enrol_instance;
     }
 
+    private function class_enrolunenrol ($course, $enrol_instance, $ist, $soll) {
+        $to_enrol = array_diff($soll, $ist);
+        $to_unenrol = array_diff($ist, $soll);
+        $to_enrol_teachers = array();
+        $to_enrol_students = array();
+        $to_enrol_parents = array();
+        foreach($to_enrol as $user) {
+            if ( $groupid = $this->get_groupid($user) ) {
+                switch ( $groupid ) {
+                    case 'teachers':
+                        $to_enrol_teachers[] = $user;
+                        break;
+                    case 'students':
+                        $to_enrol_students[] = $user;
+                        break;
+                    case 'parents':
+                        $to_enrol_parents[] = $user;
+                        break;
+                }
+            }
+        }
+        if (!empty($to_enrol) || !empty($to_unenrol)) {
+            mtrace(self::$errorlogtag . "class_enrolunenrol(" . $course->shortname . "): "
+                . "enrol(" . implode(",", $to_enrol) . ") "
+                . "unenrol(" . implode(",", $to_unenrol) . ")\n");
+        }
+        if (!empty($to_enrol_teachers)) {
+            $this->class_enrol($course, $enrol_instance, $to_enrol_teachers, $this->config->class_teachers_role);
+        }
+        if (!empty($to_enrol_students)) {
+            $this->class_enrol($course, $enrol_instance, $to_enrol_students, $this->config->class_students_role);
+        }
+        if (!empty($to_enrol_parents)) {
+            $this->class_enrol($course, $enrol_instance, $to_enrol_parents, $this->config->class_parents_role);
+        }
+        if (!empty($to_unenrol)) {
+            $this->class_unenrol($course, $enrol_instance, $to_unenrol);
+        }
+        if ($this->config->groups_enabled) {
+            $this->sync_class_groups($course->id);
+        }
+    }
+
     function sync_classes_enrolments() {
-        global $CFG, $DB;
         $class_obj = self::get_class_category($this->config);
         if (!$class_obj) {
             return;
@@ -1331,46 +1386,7 @@ class enrol_oss_plugin extends enrol_plugin {
             foreach($mdl_user_objects as $user) {
                 $mdl_members[] = $user->username;
             }
-            $to_enrol = array_diff($ldap_members, $mdl_members);
-            $to_unenrol = array_diff($mdl_members, $ldap_members);
-            $to_enrol_teachers = array();
-            $to_enrol_students = array();
-            $to_enrol_parents = array();
-            foreach($to_enrol as $user) {
-                if ( $groupid = $this->get_groupid($user) ) {
-                    switch ( $groupid ) {
-                        case 'teachers':
-                            $to_enrol_teachers[] = $user;
-                            break;
-                        case 'students':
-                            $to_enrol_students[] = $user;
-                            break;
-                        case 'parents':
-                            $to_enrol_parents[] = $user;
-                            break;
-                    }
-                }
-            }
-            if (!empty($to_enrol) || !empty($to_unenrol)) {
-                mtrace(self::$errorlogtag . "sync_classes_enrolments($class): "
-                 . "enrol(" . implode(",", $to_enrol) . ") "
-                 . "unenrol(" . implode(",", $to_unenrol) . ")\n");
-            }
-            if (!empty($to_enrol_teachers)) {
-                $this->class_enrol($course, $enrol_instance, $to_enrol_teachers, $this->config->class_teachers_role);
-            }
-            if (!empty($to_enrol_students)) {
-                $this->class_enrol($course, $enrol_instance, $to_enrol_students, $this->config->class_students_role);
-            }
-            if (!empty($to_enrol_parents)) {
-                $this->class_enrol($course, $enrol_instance, $to_enrol_parents, $this->config->class_parents_role);
-            }
-            if (!empty($to_unenrol)) {
-                $this->class_unenrol($course, $enrol_instance, $to_unenrol);
-            }
-            if ($this->config->groups_enabled) {
-                $this->sync_class_groups($course->id);
-            }
+            $this->class_enrolunenrol($course, $enrol_instance, $mdl_members, $ldap_members);
         }
     }
 
@@ -1601,6 +1617,127 @@ class enrol_oss_plugin extends enrol_plugin {
         groups_remove_member($group->id, $userid);
     }
 
+    /* ------------------------------------------------------
+     * collections function, i.e. all students and age groups
+     * ------------------------------------------------------
+     */
+    /**
+     * get array of in course enrolled users
+     * @param course $course
+     * @return string[]
+     */
+    private static function get_enrolled_usernames($course) {
+        $context = context_course::instance($course->id);
+        $mdl_user_objects = get_enrolled_users($context);
+        $enrolled = array();
+        foreach($mdl_user_objects as $user) {
+            $enrolled[] = $user->username;
+        }
+        return $enrolled;
+    }
+    /**
+     * get enrolled users in classes that match $regexp
+     * @param course array $courselist
+     * @param string $regexp
+     * @return string[]
+     */
+    private static function classes_get_enrolled($courselist, $regexp = "/*/") {
+        $enrolled = array();
+        foreach ($courselist as $classrecord) {
+            if ($classrecord->visible && preg_match($regexp, $classrecord->shortname)) {
+                $enrolled[] = get_enrolled_usernames($classrecord);
+            }
+        }
+        return $enrolled;
+    }
+    /**
+     * get course by shortname from class category with optional autocreate
+     * from template
+     *
+     * @param course_category $classcat
+     * @param course $template
+     * @return course|boolean
+     */
+    private function classes_get_course($classcat, $shortname, $template) {
+        // find all students class
+        $courselist = $classcat->get_courses();
+        foreach ($courselist as $record) {
+            if ($record->visible && $record->shortname == $shortname) {
+                // found all_stds course
+                return $record;
+            }
+        }
+        if ($this->config->class_autocreate) {
+            $course = $this->create_class($shortname, $classcat, $template);
+            if ($course) {
+                return $course;
+            } else {
+                trigger_error(self::$errorlogtag . 'get_course with autocreate: '+$shortname+' is missing and autocreation is disabled or failed.');
+                return false;
+            }
+        }
+
+    }
+
+    /**
+     * This function syncs all collections enrollments for all users.
+     */
+    function sync_collections_enrolments(){
+        global $DB;
+
+        $course_allstds = NULL;
+
+        if (! $this->config->class_allstudents && ! $this->config->class_age_groups) {
+            return;
+        }
+        $classcat = self::get_class_category($this->config);
+        if (!$classcat) {
+            return;
+        }
+        $template = $DB->get_record('course', array('id' => $this->config->class_template),'*', IGNORE_MISSING);
+        if ($template) {
+            $template = $template->id;
+        }
+        $courselist = $classcat->get_courses();
+        // process all students class
+        if ($this->config->class_allstudents) {
+            $course_allstds = $this->classes_get_course($courselist, self::$class_all_students, $template);
+            if ($course_allstds) {
+                // collect users from class allstds
+                $members_ist = self::get_enrolled_usernames($course_allstds);
+                // now collect users from all classes
+                $regexp = $this->config->class_prefixes;
+                $regexp = "/^(" . implode("*|", explode(',', $regexp)) . "*)/";
+                $members_soll = self::classes_get_enrolled($courselist, $regexp);
+                $enrol_instance = $this->get_enrol_instance($course_allstds);
+                if (!$enrol_instance) {
+                    debugging(self::$errorlogtag . "sync_collections_enrolments(".self::$all_stds."): cannot get enrol_instance, ignoring.\n");
+                    continue;
+                }
+                $this->class_enrolunenrol($course_allstds, $enrol_instance, $members_ist, $members_soll);
+            }
+        }
+        // process age groups classes
+        if ($this->config->class_age_groups) {
+            $ages[] = explode(',', $this->config->class_prefixes);
+            foreach ($ages as $age) {
+                // get age group class
+                $course = $this->classes_get_course($classcat, self::$class_age_groups . $age, $template);
+                // get members ist
+                $members_ist = self::get_enrolled_usernames($course);
+                // get members soll
+                $regexp = "/^".$age."*/";
+                $members_soll = self::classes_get_enrolled($courselist, $regexp);
+                // enrol/unenrol
+                $enrol_instance = $this->get_enrol_instance($course);
+                if (!$enrol_instance) {
+                    debugging(self::$errorlogtag . "sync_collections_enrolments(".self::$class_age_groups.$age."): cannt get enrol_instance, ignoring.\n");
+                    continue;
+                }
+                $this->class_enrolunenrol($course, $enrol_instance, $members_ist, $members_soll);
+            }
+        }
+    }
 
     /*------------------------------------------------------
      * parents functions

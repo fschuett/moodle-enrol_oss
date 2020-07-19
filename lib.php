@@ -1103,7 +1103,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         $courselist = $classcat->get_courses();
         $regexp = $this->config->class_prefixes;
-        $regexp = "/^(" . implode("*|", explode(',', $regexp)) . "*)/";
+        $regexp = "/^(" . implode("|", explode(',', $regexp)) . ")/";
 
         foreach ($courselist as $record) {
             if ($record->visible && preg_match($regexp, $record->shortname)) {
@@ -1192,11 +1192,12 @@ class enrol_oss_plugin extends enrol_plugin {
         }
     }
 
-    private static function get_localname($class) {
+    private function get_localname($class) {
         debugging(self::$errorlogtag . "get_localname($class) started...\n");
-        if (preg_match("/^".get_string("class_all_students_shortname", "enrol_oss")."/", $class)) {
+        if (preg_match("/^".get_string("class_all_students_shortname", "enrol_oss")."$/", $class)) {
             return get_string("class_all_students_localname", "enrol_oss");
-        } elseif (preg_match("/^".get_string("class_age_groups_shortname", "enrol_oss")."*/", $class)) {
+        } elseif (preg_match("/^".get_string("class_age_groups_shortname", "enrol_oss")."/", $class)
+            && preg_match("/(" . implode("|", explode(',', $this->config->class_prefixes)) . ")$/")) {
             return get_string("class_age_groups_localname", "enrol_oss"). " "
                 . str_replace(get_string("class_age_groups_shortname", "enrol_oss"),"", $class);
         } else {
@@ -1217,7 +1218,7 @@ class enrol_oss_plugin extends enrol_plugin {
         require_once ($CFG->dirroot . '/course/externallib.php');
         require_once ($CFG->dirroot . '/course/lib.php');
         $course = false;
-        $fullname = self::get_localname($class);
+        $fullname = $this->get_localname($class);
         debugging(self::$errorlogtag . "create_class (shortname:$class,category:$catid,template:$template) with fullname $fullname started...\n");
         if (!$template) {
             $data = new stdclass();
@@ -1285,7 +1286,7 @@ class enrol_oss_plugin extends enrol_plugin {
         if ($userid && strcmp($userid,"*") !== 0) {
             $this->sync_classes_enrolments_user($userid);
         } else {
-            $this->sync_classes_enrolments();
+            //FIXME remove comment $this->sync_classes_enrolments();
             $this->sync_collections_enrolments();
         }
     }
@@ -1414,7 +1415,7 @@ class enrol_oss_plugin extends enrol_plugin {
     }
 
     function is_ldap_or_manual($username) {
-        $pattern = '/^'.$this->config->parents_prefix.'*/';
+        $pattern = '/^'.$this->config->parents_prefix.'/';
         if(preg_match($pattern, $username)){
             return 'manual';
         } else {
@@ -1641,10 +1642,12 @@ class enrol_oss_plugin extends enrol_plugin {
      * @param string $regexp
      * @return string[]
      */
-    private static function classes_get_enrolled($courselist, $regexp = "/*/") {
+    private static function classes_get_enrolled($courselist, $regexp = "") {
         $enrolled = array();
+        mtrace(self::$errorlogtag . "classes_get_enrolled(\"".$regexp."\" started.)\n");
         foreach ($courselist as $classrecord) {
-            if ($classrecord->visible && preg_match($regexp, $classrecord->shortname)) {
+            if ($classrecord->visible && $regexp != "" && preg_match($regexp, $classrecord->shortname)) {
+                mtrace(self::$errorlogtag . "classes_get_enrolled: matches ".$classrecord->shortname."\n");
                 $context = context_course::instance($classrecord->id);
                 $enrolled = array_merge($enrolled, self::get_enrolled_usernames($context));
             }
@@ -1711,7 +1714,7 @@ class enrol_oss_plugin extends enrol_plugin {
                 $members_ist = self::get_enrolled_usernames($context);
                 // now collect users from all classes
                 $regexp = $this->config->class_prefixes;
-                $regexp = "/^(" . implode("*|", explode(',', $regexp)) . "*)/";
+                $regexp = "/^(" . implode("|", explode(',', $regexp)) . ")/";
                 $members_soll = self::classes_get_enrolled($courselist, $regexp);
                 $enrol_instance = $this->get_enrol_instance($course_allstds);
                 if (!$enrol_instance) {
@@ -1734,7 +1737,7 @@ class enrol_oss_plugin extends enrol_plugin {
                     $context = context_course::instance($course->id);
                     $members_ist = self::get_enrolled_usernames($context);
                     // get members soll
-                    $regexp = "/^".$age."*/";
+                    $regexp = "/^".$age."/";
                     $members_soll = self::classes_get_enrolled($courselist, $regexp);
                     // enrol/unenrol
                     $enrol_instance = $this->get_enrol_instance($course);

@@ -1286,7 +1286,7 @@ class enrol_oss_plugin extends enrol_plugin {
         if ($userid && strcmp($userid,"*") !== 0) {
             $this->sync_classes_enrolments_user($userid);
         } else {
-            //FIXME remove comment $this->sync_classes_enrolments();
+            $this->sync_classes_enrolments();
             $this->sync_collections_enrolments();
         }
     }

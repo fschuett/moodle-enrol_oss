@@ -55,6 +55,7 @@ The number is used to create the relationship between parent and student automat
 
 Changelog
 ---------
+2021-01-26 fix ccteacher context levels
 2020-07-16 add all students and age groups classes
 2018-02-06 add parent account management
 2017-11-28 add classes creation/removing and enrolment
@@ -63,4 +64,4 @@ Changelog
 2016-11-30 initial port from enrol_openlml
 
 Hildesheim, Germany
-Frank Schütte,2020(fschuett@gymhim.de)
+Frank Schütte,2016-2021(fschuett@gymhim.de)

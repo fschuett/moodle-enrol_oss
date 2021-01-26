@@ -38,10 +38,22 @@ function xmldb_enrol_oss_upgrade($oldversion) {
                 get_string('ccteacher_desc', 'enrol_oss'),
                 'editingteacher');
                 $contextlevels = get_default_contextlevels('editingteacher');
-                $contextlevels = CONTEXT_COURSECAT;
+                $contextlevels[] = CONTEXT_COURSECAT;
                 set_role_contextlevels($ccteacherid, $contextlevels);
         }
         upgrade_plugin_savepoint(true, '2019110201','enrol','oss');
+    }
+
+    if ($oldversion < '2021012601') {
+        // Update the category teacher role (ccteacher), add missing context levels.
+        if ($DB->record_exists('role', array('shortname' => 'ccteacher'))) {
+            $ccteacher = $DB->get_record('role', array('shortname' => 'ccteacher'));
+            $contextlevels = get_default_contextlevels('editingteacher');
+            $contextlevels[] = CONTEXT_COURSECAT;
+            $contextlevels = array_merge($contextlevels, get_default_contextlevels('ccteacher'));
+            set_role_contextlevels($ccteacher->id, $contextlevels);
+        }
+        upgrade_plugin_savepoint(true, '2021012601','enrol','oss');
     }
 
     return true;

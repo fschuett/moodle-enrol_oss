@@ -519,9 +519,9 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         $changed = false;
         for($i = 0; $i < count($groups); $i++) {
-            if( $groups[$i] != strtoupper($groups[$i]) ) {
+            if( $groups[$i] != strtoupper(trim($groups[$i])) ) {
                 $changed = true;
-                $groups[$i] = strtoupper($groups[$i]);
+                $groups[$i] = strtoupper(trim($groups[$i]));
             }
         }
         if ($changed) {

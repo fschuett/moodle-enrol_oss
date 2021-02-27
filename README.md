@@ -55,6 +55,7 @@ The number is used to create the relationship between parent and student automat
 
 Changelog
 ---------
+2021-02-26 ignore whitespace around cohort names in idnumber list
 2021-01-26 fix ccteacher context levels
 2020-07-16 add all students and age groups classes
 2018-02-06 add parent account management

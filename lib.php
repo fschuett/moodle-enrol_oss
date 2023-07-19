@@ -2180,6 +2180,10 @@ class enrol_oss_plugin extends enrol_plugin {
         // are syncing a lot of users (as we try to open a new connection
         // to get the user details). This is the least invasive way
         // to reuse existing connections without greater code surgery.
+        $rp = new ReflectionProperty($authldap,'ldapconns');
+        if ($rp->isProtected()) {
+            return $authldap->ldap_connect();
+        }
         if(!empty($authldap->ldapconnection)) {
             $authldap->ldapconns++;
             return $authldap->ldapconnection;

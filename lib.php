@@ -1195,14 +1195,16 @@ class enrol_oss_plugin extends enrol_plugin {
     private function get_localname($class) {
         debugging(self::$errorlogtag . "get_localname($class) started...\n");
         if (preg_match("/^".get_string("class_all_students_shortname", "enrol_oss")."$/", $class)) {
-            return get_string("class_all_students_localname", "enrol_oss");
+            $result = get_string("class_all_students_localname", "enrol_oss");
         } elseif (preg_match("/^".get_string("class_age_groups_shortname", "enrol_oss")."/", $class)
-            && preg_match("/(" . implode("|", explode(',', $this->config->class_prefixes)) . ")$/")) {
-            return get_string("class_age_groups_localname", "enrol_oss"). " "
+            && preg_match("/(" . implode("|", explode(',', $this->config->class_prefixes)) . ")$/", $class)) {
+            $result = get_string("class_age_groups_localname", "enrol_oss"). " "
                 . str_replace(get_string("class_age_groups_shortname", "enrol_oss"),"", $class);
         } else {
-            return get_string("class_localname","enrol_oss") . " " . $class;
+            $result = get_string("class_localname","enrol_oss") . " " . $class;
         }
+        debugging(self::$errorlogtag . "get_localname($class) ended with return $result\n");
+		return $result;
     }
 
     /**

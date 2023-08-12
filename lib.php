@@ -545,23 +545,24 @@ class enrol_oss_plugin extends enrol_plugin {
 
         debugging(self::$errorlogtag.'ldap_get_children... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        if (!isset($this->authldap) or empty($this->authldap)) {
-            $this->authldap = get_auth_plugin('ldap');
+        $authldap = $this->authldap;
+        if (!isset($authldap) or empty($authldap)) {
+            $this->authldap = $authldap = get_auth_plugin('ldap');
         }
-        $ldapconnection = $this->ldap_connect($this->authldap);
+        $ldapconnection = $authldap->ldap_connect();
         $fresult = array ();
         if (!$ldapconnection) {
             return false;
         }
         $filter = 'memberOf=CN=STUDENTS*';
-        $contexts = explode(';', $this->authldap->config->contexts);
+        $contexts = explode(';', $authldap->config->contexts);
         foreach ($contexts as $context) {
             $context = trim($context);
             if (empty ($context)) {
                 continue;
             }
 
-            if ($this->authldap->config->search_sub) {
+            if ($authldap->config->search_sub) {
                 // Use ldap_search to find first child from subtree.
                 $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
                     $this->config->parents_child_attribute, 'cn'
@@ -584,7 +585,7 @@ class enrol_oss_plugin extends enrol_plugin {
                 }
             }
         }
-        $this->authldap->ldap_close();
+        $authldap->ldap_close();
         return $fresult;
     }
 
@@ -608,12 +609,13 @@ class enrol_oss_plugin extends enrol_plugin {
 
         debugging(self::$errorlogtag.'ldap_get_grouplist... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        if (!isset($this->authldap) or empty($this->authldap)) {
-            $this->authldap = get_auth_plugin('ldap');
+        $authldap = $this->authldap;
+        if (!isset($authldap) or empty($authldap)) {
+            $this->authldap = $authldap = get_auth_plugin('ldap');
         }
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $ldapconnection = $this->ldap_connect($this->authldap);
+        $ldapconnection = $authldap->ldap_connect();
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $fresult = array ();
@@ -636,7 +638,7 @@ class enrol_oss_plugin extends enrol_plugin {
                 continue;
             }
 
-            if ($this->authldap->config->search_sub) {
+            if ($authldap->config->search_sub) {
                 // Use ldap_search to find first group from subtree.
                 $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
                     $this->config->attribute
@@ -657,7 +659,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_close '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $this->authldap->ldap_close();
+        $authldap->ldap_close();
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_closed '.date("H:i:s"),
             DEBUG_DEVELOPER);
         // Remove teachers from all but teachers groups.
@@ -682,12 +684,13 @@ class enrol_oss_plugin extends enrol_plugin {
             DEBUG_DEVELOPER);
         $ret = array ();
         $members = array ();
-        if (!isset($this->authldap) or empty($authldap)) {
-            $this->authldap = get_auth_plugin('ldap');
+        $authldap = $this->authldap;
+        if (!isset($authldap) or empty($authldap)) {
+            $this->authldap = $authldap = get_auth_plugin('ldap');
         }
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $ldapconnection = $this->ldap_connect($this->authldap);
+        $ldapconnection = $authldap->ldap_connect();
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
 
@@ -739,7 +742,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         debugging(self::$errorlogtag.'ldap_get_group_members... ldap_close '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $this->authldap->ldap_close();
+        $authldap->ldap_close();
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_closed '.date("H:i:s"),
             DEBUG_DEVELOPER);
         foreach ($members as $member) {
@@ -2146,11 +2149,12 @@ class enrol_oss_plugin extends enrol_plugin {
         if ($dn == '') {
                 return '';
         }
+        $authldap = $this->authldap;
         if (!isset($this->userid_regex) or empty($this->userid_regex)) {
-            if (!isset($this->authldap) or empty($this->authldap)) {
-                $this->authldap = get_auth_plugin('ldap');
+            if (!isset($authldap) or empty($authldap)) {
+                $this->authldap = $authldap = get_auth_plugin('ldap');
             }
-            $this->userid_regex = "/^". $this->authldap->config->field_map_idnumber. "=([^,]+),/i";
+            $this->userid_regex = "/^". $authldap->config->field_map_idnumber. "=([^,]+),/i";
             debugging(self::$errorlogtag . sprintf('userid_from_dn: Match userid with %s from %s',$this->userid_regex,$dn),
             DEBUG_DEVELOPER);
         }
@@ -2167,64 +2171,6 @@ class enrol_oss_plugin extends enrol_plugin {
         if ($user) {
             $this->sync_user_enrolments($user);
         }
-    }
-
-    /**
-     * WORKAROUND: auth_ldap->ldap_connect dies -- DEPRECATED
-     * Connect to the LDAP server, using the plugin configured
-     * settings. It's actually a wrapper around ldap_connect_moodle()
-     *
-     * @return resource A valid LDAP connection or false
-     */
-    private function ldap_connect_ul ($authldap) {
-        // Cache ldap connections. They are expensive to set up
-        // and can drain the TCP/IP ressources on the server if we
-        // are syncing a lot of users (as we try to open a new connection
-        // to get the user details). This is the least invasive way
-        // to reuse existing connections without greater code surgery.
-        $rp = new ReflectionProperty($authldap,'ldapconns');
-        if ($rp->isProtected()) {
-            return $authldap->ldap_connect();
-        }
-        if(!empty($authldap->ldapconnection)) {
-            $authldap->ldapconns++;
-            return $authldap->ldapconnection;
-        }
-        if (isset($authldap->config->bind_dn)) {
-            $binddn = $authldap->config->bind_dn;
-        }
-        else {
-            $binddn = '';
-        }
-        if (isset($authldap->config->bind_pw)) {
-            $bindpw = $authldap->config->bind_pw;
-        }
-        else {
-            $bindpw = '';
-        }
-        if (isset($authldap->config->opt_deref)) {
-            $optderef = $authldap->config->opt_deref;
-        }
-        else {
-            $optderef = false;
-        }
-        if (isset($authldap->config->start_tls)) {
-            $starttls = $authldap->config->start_tls;
-        }
-        else {
-            $starttls = false;
-        }
-        if($ldapconnection = ldap_connect_moodle($authldap->config->host_url, $authldap->config->ldap_version,
-                                                 $authldap->config->user_type, $binddn,
-                                                 $bindpw, $optderef,
-                                                 $debuginfo, $starttls)) {
-            $authldap->ldapconns = 1;
-            $authldap->ldapconnection = $ldapconnection;
-            return $ldapconnection;
-        }
-
-        debugging(get_string('auth_ldap_noconnect_all', 'auth_ldap'));
-        return false;
     }
 
 } // End of class.

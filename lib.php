@@ -548,7 +548,7 @@ class enrol_oss_plugin extends enrol_plugin {
         if (!isset($this->authldap) or empty($this->authldap)) {
             $this->authldap = get_auth_plugin('ldap');
         }
-        $ldapconnection = $this->ldap_connect_ul($this->authldap);
+        $ldapconnection = $this->ldap_connect($this->authldap);
         $fresult = array ();
         if (!$ldapconnection) {
             return false;
@@ -613,7 +613,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $ldapconnection = $this->ldap_connect_ul($this->authldap);
+        $ldapconnection = $this->ldap_connect($this->authldap);
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $fresult = array ();
@@ -687,7 +687,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $ldapconnection = $this->ldap_connect_ul($this->authldap);
+        $ldapconnection = $this->ldap_connect($this->authldap);
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
 
@@ -2170,7 +2170,7 @@ class enrol_oss_plugin extends enrol_plugin {
     }
 
     /**
-     * WORKAROUND: auth_ldap->ldap_connect dies
+     * WORKAROUND: auth_ldap->ldap_connect dies -- DEPRECATED
      * Connect to the LDAP server, using the plugin configured
      * settings. It's actually a wrapper around ldap_connect_moodle()
      *

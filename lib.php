@@ -61,23 +61,6 @@ class enrol_oss_plugin extends enrol_plugin {
         require_once($CFG->dirroot . '/course/lib.php');
 
         $this->load_config();
-        // Make sure we get sane defaults for critical values.
-        $this->config->ldapencoding = $this->get_config('ldapencoding', 'utf-8');
-        $this->config->user_type = $this->get_config('user_type', 'default');
-
-        $ldap_usertypes = ldap_supported_usertypes();
-        $this->config->user_type_name = $ldap_usertypes[$this->config->user_type];
-        unset($ldap_usertypes);
-
-        $default = ldap_getdefaults();
-        // Use defaults if values not given. Dont use this->get_config()
-        // here to be able to check for 0 and false values too.
-        foreach ($default as $key => $value) {
-            // Watch out - 0, false are correct values too, so we can't use $this->get_config().
-            if (!isset($this->config->{$key}) or $this->config->{$key} == '') {
-                $this->config->{$key} = $value[$this->config->user_type];
-            }
-        }
     }
 
     /**
@@ -555,14 +538,16 @@ class enrol_oss_plugin extends enrol_plugin {
             return false;
         }
         $filter = 'memberOf=CN=STUDENTS*';
-        $contexts = explode(';', $authldap->config->contexts);
+        $contexts = $authldap->get_config('contexts','');
+        $contexts = explode(';', $contexts);
         foreach ($contexts as $context) {
             $context = trim($context);
             if (empty ($context)) {
                 continue;
             }
 
-            if ($authldap->config->search_sub) {
+            $search_sub = $authldap->get_config('search_sub', FALSE);
+            if ($search_sub) {
                 // Use ldap_search to find first child from subtree.
                 $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
                     $this->config->parents_child_attribute, 'cn'
@@ -638,7 +623,8 @@ class enrol_oss_plugin extends enrol_plugin {
                 continue;
             }
 
-            if ($authldap->config->search_sub) {
+            $search_sub = $authldap->get_config('search_sub', FALSE);
+            if ($search_sub) {
                 // Use ldap_search to find first group from subtree.
                 $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
                     $this->config->attribute
@@ -650,11 +636,17 @@ class enrol_oss_plugin extends enrol_plugin {
                 ));
             }
 
-            $groups = ldap_get_entries($ldapconnection, $ldap_result);
+            if ($ldap_result) {
+                $groups = ldap_get_entries($ldapconnection, $ldap_result);
 
-            // Add found groups to list.
-            for ($i = 0; $i < count($groups) - 1; $i++) {
-                array_push($fresult, ($groups[$i][$this->config->attribute][0]));
+                // Add found groups to list.
+                for ($i = 0; $i < count($groups) - 1; $i++) {
+                    array_push($fresult, ($groups[$i][$this->config->attribute][0]));
+                }
+            }
+            else {
+                debugging(self::$errorlogtag.'ldap_get_grouplist: ldap_result ist leer(context:'.$context.'|filter:'.$filter.')', 
+                        DEBUG_DEVELOPER);
             }
         }
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_close '.date("H:i:s"),
@@ -688,13 +680,15 @@ class enrol_oss_plugin extends enrol_plugin {
         if (!isset($authldap) or empty($authldap)) {
             $this->authldap = $authldap = get_auth_plugin('ldap');
         }
+        $ldapencoding = $authldap->get_config('ldapencoding', 'utf-8');
+
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $ldapconnection = $authldap->ldap_connect();
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
 
-        $group = core_text::convert($group, 'utf-8', $this->config->ldapencoding);
+        $group = core_text::convert($group, 'utf-8', $ldapencoding);
 
         if (!$ldapconnection) {
             return $ret;
@@ -2154,7 +2148,8 @@ class enrol_oss_plugin extends enrol_plugin {
             if (!isset($authldap) or empty($authldap)) {
                 $this->authldap = $authldap = get_auth_plugin('ldap');
             }
-            $this->userid_regex = "/^". $authldap->config->field_map_idnumber. "=([^,]+),/i";
+            $field_map_idnumber = $authldap->get_config('field_map_idnumber','cn');
+            $this->userid_regex = "/^". $field_map_idnumber. "=([^,]+),/i";
             debugging(self::$errorlogtag . sprintf('userid_from_dn: Match userid with %s from %s',$this->userid_regex,$dn),
             DEBUG_DEVELOPER);
         }

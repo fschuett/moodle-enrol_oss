@@ -2,11 +2,12 @@ moodle-enrol_oss
 ====================
 
 enrolment plugin for moodle from 3.x to autoenrol in
-conjunction with the open school server enrol_oss.
+conjunction with the open school server or other ldap servers enrol_oss.
 
 It is supposed to work with the
 
 Open School Server (www.openschoolserver.net)
+other ldap servers that provide user and group information
 
 servers.
 
@@ -55,6 +56,7 @@ The number is used to create the relationship between parent and student automat
 
 Changelog
 ---------
+2023-10-25 compatibility with php 8.0 and ldap servers without wildcard search
 2021-02-26 ignore whitespace around cohort names in idnumber list
 2021-01-26 fix ccteacher context levels
 2020-07-16 add all students and age groups classes
@@ -65,4 +67,4 @@ Changelog
 2016-11-30 initial port from enrol_openlml
 
 Hildesheim, Germany
-Frank Schütte,2016-2021(fschuett@gymhim.de)
+Frank Schütte,2016-2023(fschuett@gymhim.de)

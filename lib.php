@@ -540,7 +540,7 @@ class enrol_oss_plugin extends enrol_plugin {
         $groupcontexts = explode(';',$this->config->contexts);
         foreach ($groupcontexts as $groupcontext) {
             $filter = 'memberOf='.$this->config->attribute.'='.$this->config->students_group_name.','.$groupcontext;
-            $contexts = $authldap->get_config('contexts','');
+            $contexts = isset($authldap->config->contexts)? $authldap->config->contexts : '';
             $contexts = explode(';', $contexts);
             foreach ($contexts as $context) {
                 $context = trim($context);
@@ -548,7 +548,7 @@ class enrol_oss_plugin extends enrol_plugin {
                     continue;
                 }
 
-                $search_sub = $authldap->get_config('search_sub', FALSE);
+                $search_sub = isset($authldap->config->search_sub)? $authldap->config->search_sub : FALSE;
                 if ($search_sub) {
                     // Use ldap_search to find first child from subtree.
                     $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
@@ -626,7 +626,7 @@ class enrol_oss_plugin extends enrol_plugin {
                 continue;
             }
 
-            $search_sub = $authldap->get_config('search_sub', FALSE);
+            $search_sub = isset($authldap->config->search_sub)? $authldap->config->search_sub : FALSE;
             if ($search_sub) {
                 // Use ldap_search to find first group from subtree.
                 $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
@@ -683,7 +683,7 @@ class enrol_oss_plugin extends enrol_plugin {
         if (!isset($authldap) or empty($authldap)) {
             $this->authldap = $authldap = get_auth_plugin('ldap');
         }
-        $ldapencoding = $authldap->get_config('ldapencoding', 'utf-8');
+        $ldapencoding = isset($authldap->config->ldapencoding)? $authldap->config->ldapencoding : 'utf-8';
 
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
@@ -2151,7 +2151,7 @@ class enrol_oss_plugin extends enrol_plugin {
             if (!isset($authldap) or empty($authldap)) {
                 $this->authldap = $authldap = get_auth_plugin('ldap');
             }
-            $field_map_idnumber = $authldap->get_config('field_map_idnumber','cn');
+            $field_map_idnumber = isset($authldap->config->field_map_idnumber)? $authldap->config->field_map_idnumber : 'cn';
             $this->userid_regex = "/^". $field_map_idnumber. "=([^,]+),/i";
             debugging(self::$errorlogtag . sprintf('userid_from_dn: Match userid with %s from %s',$this->userid_regex,$dn),
             DEBUG_DEVELOPER);

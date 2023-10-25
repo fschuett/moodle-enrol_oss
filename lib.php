@@ -537,36 +537,39 @@ class enrol_oss_plugin extends enrol_plugin {
         if (!$ldapconnection) {
             return false;
         }
-        $filter = 'memberOf=CN=STUDENTS*';
-        $contexts = $authldap->get_config('contexts','');
-        $contexts = explode(';', $contexts);
-        foreach ($contexts as $context) {
-            $context = trim($context);
-            if (empty ($context)) {
-                continue;
-            }
+        $groupcontexts = explode(';',$this->config->contexts);
+        foreach ($groupcontexts as $groupcontext) {
+            $filter = 'memberOf='.$this->config->attribute.'='.$this->config->students_group_name.','.$groupcontext;
+            $contexts = $authldap->get_config('contexts','');
+            $contexts = explode(';', $contexts);
+            foreach ($contexts as $context) {
+                $context = trim($context);
+                if (empty ($context)) {
+                    continue;
+                }
 
-            $search_sub = $authldap->get_config('search_sub', FALSE);
-            if ($search_sub) {
-                // Use ldap_search to find first child from subtree.
-                $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
-                    $this->config->parents_child_attribute, 'cn'
-                ));
-            } else {
-                // Search only in this context.
-                $ldap_result = ldap_list($ldapconnection, $context, $filter, array (
-                    $this->config->parents_child_attribute, 'cn'
-                ));
-            }
-
-            $children = ldap_get_entries($ldapconnection, $ldap_result);
-            // Add found children to list.
-            for ($i = 0; $i < count($children) - 1; $i++) {
-                if(array_key_exists($this->config->parents_child_attribute, $children[$i])) {
-                    $fresult[$children[$i][$this->config->parents_child_attribute][0]] =
-                        $children[$i]['cn'][0];
+                $search_sub = $authldap->get_config('search_sub', FALSE);
+                if ($search_sub) {
+                    // Use ldap_search to find first child from subtree.
+                    $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
+                        $this->config->parents_child_attribute, 'cn'
+                    ));
                 } else {
-                    debugging(self::$errorlogtag."ldap_get_children(): entry ".$children[$i]['cn'][0]." has no  attribute ".$this->config->parents_child_attribute."\n");
+                    // Search only in this context.
+                    $ldap_result = ldap_list($ldapconnection, $context, $filter, array (
+                        $this->config->parents_child_attribute, 'cn'
+                    ));
+                }
+
+                $children = ldap_get_entries($ldapconnection, $ldap_result);
+                // Add found children to list.
+                for ($i = 0; $i < count($children) - 1; $i++) {
+                    if(array_key_exists($this->config->parents_child_attribute, $children[$i])) {
+                        $fresult[$children[$i][$this->config->parents_child_attribute][0]] =
+                            $children[$i]['cn'][0];
+                    } else {
+                        debugging(self::$errorlogtag."ldap_get_children(): entry ".$children[$i]['cn'][0]." has no  attribute ".$this->config->parents_child_attribute."\n");
+                    }
                 }
             }
         }

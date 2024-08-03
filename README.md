@@ -56,6 +56,7 @@ The number is used to create the relationship between parent and student automat
 
 Changelog
 ---------
+2024-08-03 fix: cohort names are case sensitive and need to be
 2023-10-25 compatibility with php 8.0 and ldap servers without wildcard search
 2021-02-26 ignore whitespace around cohort names in idnumber list
 2021-01-26 fix ccteacher context levels
@@ -67,4 +68,4 @@ Changelog
 2016-11-30 initial port from enrol_openlml
 
 Hildesheim, Germany
-Frank Schütte,2016-2023(fschuett@gymhim.de)
+Frank Schütte,2016-2024(fschuett@gymhim.de)

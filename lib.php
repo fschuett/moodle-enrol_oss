@@ -785,7 +785,7 @@ class enrol_oss_plugin extends enrol_plugin {
 
         debugging(self::$errorlogtag.'get_cohort_id('.$groupname.')... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $equalidnumber = $DB->sql_equal('idnumber', $groupname);
+        $equalidnumber = $DB->sql_equal('idnumber', "'".$groupname."'");
         $sql = "SELECT *
                   FROM {cohort}
                  WHERE {$equalidnumber}

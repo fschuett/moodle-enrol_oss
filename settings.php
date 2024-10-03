@@ -193,15 +193,15 @@ if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/class_attribute',
     get_string('class_attribute','enrol_oss'),
     get_string('class_attribute_desc','enrol_oss'), 'groupType'));
+    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/class_attribute_value',
+        get_string('class_attribute_value','enrol_oss'),
+        get_string('class_attribute_value_desc','enrol_oss'), 'class'));
     $settings->add(new admin_setting_configcheckbox('enrol_oss/class_use_prefixes',
     get_string('class_use_prefixes','enrol_oss'),
     get_string('class_use_prefixes_desc','enrol_oss'),0));
     $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/class_prefixes',
             get_string('class_prefixes', 'enrol_oss'),
             get_string('class_prefixes_desc', 'enrol_oss'), '05,06,07,08,09,10,11,12,13'));
-    $settings->add(new admin_setting_configtext_trim_lower('enrol_oss/class_attribute_value',
-    get_string('class_attribute_value','enrol_oss'),
-    get_string('class_attribute_value_desc','enrol_oss'), 'class'));
     if (!during_initial_install()) {
         $options = get_default_enrol_roles(context_system::instance());
         $teacher = get_archetype_roles('editingteacher');

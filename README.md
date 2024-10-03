@@ -56,16 +56,28 @@ The number is used to create the relationship between parent and student automat
 
 Changelog
 ---------
+2024-10-03 fix: match cohort names case sensitive in enrolment, too
+
 2024-08-03 fix: cohort names are case sensitive and need to be
+
 2023-10-25 compatibility with php 8.0 and ldap servers without wildcard search
+
 2021-02-26 ignore whitespace around cohort names in idnumber list
+
 2021-01-26 fix ccteacher context levels
+
 2020-07-16 add all students and age groups classes
+
 2018-02-06 add parent account management
+
 2017-11-28 add classes creation/removing and enrolment
+
 2017-08-19 fixed dn handling, coursecat movements
+
 2016-11-30 added option member_attribute_isdn for dn handling
+
 2016-11-30 initial port from enrol_openlml
 
 Hildesheim, Germany
+
 Frank Schütte,2016-2024(fschuett@gymhim.de)

@@ -26,9 +26,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2024080301;        // The current plugin version (Date: YYYYMMDDXX).
+$plugin->version   = 2024100301;        // The current plugin version (Date: YYYYMMDDXX).
 $plugin->requires  = 2015051100;        // Requires Moodle version 2.9
 $plugin->component = 'enrol_oss';   // Full name of the plugin (used for diagnostics).
-$plugin->maturity  = MATURITY_BETA;     // Beta, nees testing.
-$plugin->release   = '2.4.2 (Build: 2024080301)';
+$plugin->maturity  = MATURITY_ALPHA;     // Alpha, Test version.
+$plugin->release   = '2.4.3 (Build: 2024100301)';
 $plugin->dependencies = array('auth_ldap' => ANY_VERSION, 'enrol_cohort' => ANY_VERSION);

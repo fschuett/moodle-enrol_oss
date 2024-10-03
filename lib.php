@@ -648,7 +648,7 @@ class enrol_oss_plugin extends enrol_plugin {
                 }
             }
             else {
-                debugging(self::$errorlogtag.'ldap_get_grouplist: ldap_result ist leer(context:'.$context.'|filter:'.$filter.')', 
+                debugging(self::$errorlogtag.'ldap_get_grouplist: ldap_result ist leer(context:'.$context.'|filter:'.$filter.')',
                         DEBUG_DEVELOPER);
             }
         }
@@ -774,6 +774,7 @@ class enrol_oss_plugin extends enrol_plugin {
 
     /**
      * get_cohort_id search for cohort id of a given ldap group name, create cohort, if autocreate = true
+     * the search must be mainly casesensitive, so sql_equal is necessary!
      *
      * @param string $groupname
      * @param boolean $autocreate
@@ -784,12 +785,13 @@ class enrol_oss_plugin extends enrol_plugin {
 
         debugging(self::$errorlogtag.'get_cohort_id('.$groupname.')... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $params = array (
-            'idnumber' => $groupname,
-            'component' => 'enrol_oss',
-            'contextid' => SYSCONTEXTID,
-        );
-        if (!$cohort = $DB->get_record('cohort', $params, '*', IGNORE_MULTIPLE)) {
+        $equalidnumber = $DB->sql_equal('idnumber', $groupname);
+        $sql = "SELECT *
+                  FROM {cohort}
+                 WHERE {$equalidnumber}
+                       AND component = 'enrol_oss'
+                       AND contextid = ".SYSCONTEXTID;
+        if (!$cohort = $DB->get_record_sql($sql, null, '*', IGNORE_MULTIPLE)) {
             if (!$autocreate) {
                 return false;
             }
@@ -800,7 +802,7 @@ class enrol_oss_plugin extends enrol_plugin {
             $cohort->description = get_string('sync_description', 'enrol_oss');
             $cohortid = cohort_add_cohort($cohort);
         } else {
-            if ($DB->count_records('cohort', $params) > 1) {
+            if ($DB->count_records_sql($sql, null) > 1) {
                 if (debugging()) {
                     trigger_error(' There are more than one matching cohort with idnumber '.
                         $groupname .'. That is likely to cause problems.',E_USER_WARNING);
@@ -881,6 +883,7 @@ class enrol_oss_plugin extends enrol_plugin {
     /**
      * return an array of cohort instances used in the course with the
      * given course id and created by enrol_oss
+     * cohort instances are matched by cohort id (integer)
      * @return array
      */
     private function get_coursecohortlist($courseid) {

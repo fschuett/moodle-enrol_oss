@@ -113,7 +113,7 @@ class enrol_oss_plugin extends enrol_plugin {
         foreach ($cohorts as $cohort) {
             if (!in_array($cohort->idnumber, $ldap_groups)) {
                 cohort_remove_member($cohort->id, $user->id);
-                mtace("    removed ".$user->id." from cohort ".$cohort->id);
+                mtrace("    removed ".$user->id." from cohort ".$cohort->id);
                 if (!$DB->record_exists('cohort_members', array('cohortid' => $cohort->id))) {
                     cohort_delete_cohort($cohortid);
                     mtrace ("    removed cohort " . $cohortid );

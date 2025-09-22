@@ -61,23 +61,6 @@ class enrol_oss_plugin extends enrol_plugin {
         require_once($CFG->dirroot . '/course/lib.php');
 
         $this->load_config();
-        // Make sure we get sane defaults for critical values.
-        $this->config->ldapencoding = $this->get_config('ldapencoding', 'utf-8');
-        $this->config->user_type = $this->get_config('user_type', 'default');
-
-        $ldap_usertypes = ldap_supported_usertypes();
-        $this->config->user_type_name = $ldap_usertypes[$this->config->user_type];
-        unset($ldap_usertypes);
-
-        $default = ldap_getdefaults();
-        // Use defaults if values not given. Dont use this->get_config()
-        // here to be able to check for 0 and false values too.
-        foreach ($default as $key => $value) {
-            // Watch out - 0, false are correct values too, so we can't use $this->get_config().
-            if (!isset($this->config->{$key}) or $this->config->{$key} == '') {
-                $this->config->{$key} = $value[$this->config->user_type];
-            }
-        }
     }
 
     /**
@@ -130,7 +113,7 @@ class enrol_oss_plugin extends enrol_plugin {
         foreach ($cohorts as $cohort) {
             if (!in_array($cohort->idnumber, $ldap_groups)) {
                 cohort_remove_member($cohort->id, $user->id);
-                mtace("    removed ".$user->id." from cohort ".$cohort->id);
+                mtrace("    removed ".$user->id." from cohort ".$cohort->id);
                 if (!$DB->record_exists('cohort_members', array('cohortid' => $cohort->id))) {
                     cohort_delete_cohort($cohortid);
                     mtrace ("    removed cohort " . $cohortid );
@@ -519,9 +502,9 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         $changed = false;
         for($i = 0; $i < count($groups); $i++) {
-            if( $groups[$i] != strtoupper(trim($groups[$i])) ) {
+            if( $groups[$i] != trim($groups[$i]) ) {
                 $changed = true;
-                $groups[$i] = strtoupper(trim($groups[$i]));
+                $groups[$i] = trim($groups[$i]);
             }
         }
         if ($changed) {
@@ -545,46 +528,52 @@ class enrol_oss_plugin extends enrol_plugin {
 
         debugging(self::$errorlogtag.'ldap_get_children... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        if (!isset($this->authldap) or empty($this->authldap)) {
-            $this->authldap = get_auth_plugin('ldap');
+        $authldap = $this->authldap;
+        if (!isset($authldap) or empty($authldap)) {
+            $this->authldap = $authldap = get_auth_plugin('ldap');
         }
-        $ldapconnection = $this->ldap_connect_ul($this->authldap);
+        $ldapconnection = $authldap->ldap_connect();
         $fresult = array ();
         if (!$ldapconnection) {
             return false;
         }
-        $filter = 'memberOf=CN=STUDENTS*';
-        $contexts = explode(';', $this->authldap->config->contexts);
-        foreach ($contexts as $context) {
-            $context = trim($context);
-            if (empty ($context)) {
-                continue;
-            }
+        $groupcontexts = explode(';',$this->config->contexts);
+        foreach ($groupcontexts as $groupcontext) {
+            $filter = 'memberOf='.$this->config->attribute.'='.$this->config->students_group_name.','.$groupcontext;
+            $contexts = isset($authldap->config->contexts)? $authldap->config->contexts : '';
+            $contexts = explode(';', $contexts);
+            foreach ($contexts as $context) {
+                $context = trim($context);
+                if (empty ($context)) {
+                    continue;
+                }
 
-            if ($this->authldap->config->search_sub) {
-                // Use ldap_search to find first child from subtree.
-                $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
-                    $this->config->parents_child_attribute, 'cn'
-                ));
-            } else {
-                // Search only in this context.
-                $ldap_result = ldap_list($ldapconnection, $context, $filter, array (
-                    $this->config->parents_child_attribute, 'cn'
-                ));
-            }
-
-            $children = ldap_get_entries($ldapconnection, $ldap_result);
-            // Add found children to list.
-            for ($i = 0; $i < count($children) - 1; $i++) {
-                if(array_key_exists($this->config->parents_child_attribute, $children[$i])) {
-                    $fresult[$children[$i][$this->config->parents_child_attribute][0]] =
-                        $children[$i]['cn'][0];
+                $search_sub = isset($authldap->config->search_sub)? $authldap->config->search_sub : FALSE;
+                if ($search_sub) {
+                    // Use ldap_search to find first child from subtree.
+                    $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
+                        $this->config->parents_child_attribute, 'cn'
+                    ));
                 } else {
-                    debugging(self::$errorlogtag."ldap_get_children(): entry ".$children[$i]['cn'][0]." has no  attribute ".$this->config->parents_child_attribute."\n");
+                    // Search only in this context.
+                    $ldap_result = ldap_list($ldapconnection, $context, $filter, array (
+                        $this->config->parents_child_attribute, 'cn'
+                    ));
+                }
+
+                $children = ldap_get_entries($ldapconnection, $ldap_result);
+                // Add found children to list.
+                for ($i = 0; $i < count($children) - 1; $i++) {
+                    if(array_key_exists($this->config->parents_child_attribute, $children[$i])) {
+                        $fresult[$children[$i][$this->config->parents_child_attribute][0]] =
+                            $children[$i]['cn'][0];
+                    } else {
+                        debugging(self::$errorlogtag."ldap_get_children(): entry ".$children[$i]['cn'][0]." has no  attribute ".$this->config->parents_child_attribute."\n");
+                    }
                 }
             }
         }
-        $this->authldap->ldap_close();
+        $authldap->ldap_close();
         return $fresult;
     }
 
@@ -608,12 +597,13 @@ class enrol_oss_plugin extends enrol_plugin {
 
         debugging(self::$errorlogtag.'ldap_get_grouplist... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        if (!isset($this->authldap) or empty($this->authldap)) {
-            $this->authldap = get_auth_plugin('ldap');
+        $authldap = $this->authldap;
+        if (!isset($authldap) or empty($authldap)) {
+            $this->authldap = $authldap = get_auth_plugin('ldap');
         }
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $ldapconnection = $this->ldap_connect_ul($this->authldap);
+        $ldapconnection = $authldap->ldap_connect();
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
         $fresult = array ();
@@ -636,7 +626,8 @@ class enrol_oss_plugin extends enrol_plugin {
                 continue;
             }
 
-            if ($this->authldap->config->search_sub) {
+            $search_sub = isset($authldap->config->search_sub)? $authldap->config->search_sub : FALSE;
+            if ($search_sub) {
                 // Use ldap_search to find first group from subtree.
                 $ldap_result = ldap_search($ldapconnection, $context, $filter, array (
                     $this->config->attribute
@@ -648,16 +639,22 @@ class enrol_oss_plugin extends enrol_plugin {
                 ));
             }
 
-            $groups = ldap_get_entries($ldapconnection, $ldap_result);
+            if ($ldap_result) {
+                $groups = ldap_get_entries($ldapconnection, $ldap_result);
 
-            // Add found groups to list.
-            for ($i = 0; $i < count($groups) - 1; $i++) {
-                array_push($fresult, ($groups[$i][$this->config->attribute][0]));
+                // Add found groups to list.
+                for ($i = 0; $i < count($groups) - 1; $i++) {
+                    array_push($fresult, ($groups[$i][$this->config->attribute][0]));
+                }
+            }
+            else {
+                debugging(self::$errorlogtag.'ldap_get_grouplist: ldap_result ist leer(context:'.$context.'|filter:'.$filter.')',
+                        DEBUG_DEVELOPER);
             }
         }
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_close '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $this->authldap->ldap_close();
+        $authldap->ldap_close();
         debugging(self::$errorlogtag.'ldap_get_grouplist... ldap_closed '.date("H:i:s"),
             DEBUG_DEVELOPER);
         // Remove teachers from all but teachers groups.
@@ -682,16 +679,19 @@ class enrol_oss_plugin extends enrol_plugin {
             DEBUG_DEVELOPER);
         $ret = array ();
         $members = array ();
-        if (!isset($this->authldap) or empty($authldap)) {
-            $this->authldap = get_auth_plugin('ldap');
+        $authldap = $this->authldap;
+        if (!isset($authldap) or empty($authldap)) {
+            $this->authldap = $authldap = get_auth_plugin('ldap');
         }
+        $ldapencoding = isset($authldap->config->ldapencoding)? $authldap->config->ldapencoding : 'utf-8';
+
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connect '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $ldapconnection = $this->ldap_connect_ul($this->authldap);
+        $ldapconnection = $authldap->ldap_connect();
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_connected '.date("H:i:s"),
             DEBUG_DEVELOPER);
 
-        $group = core_text::convert($group, 'utf-8', $this->config->ldapencoding);
+        $group = core_text::convert($group, 'utf-8', $ldapencoding);
 
         if (!$ldapconnection) {
             return $ret;
@@ -739,7 +739,7 @@ class enrol_oss_plugin extends enrol_plugin {
         }
         debugging(self::$errorlogtag.'ldap_get_group_members... ldap_close '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $this->authldap->ldap_close();
+        $authldap->ldap_close();
         debugging(self::$errorlogtag.'ldap_get_groupmembers... ldap_closed '.date("H:i:s"),
             DEBUG_DEVELOPER);
         foreach ($members as $member) {
@@ -774,6 +774,7 @@ class enrol_oss_plugin extends enrol_plugin {
 
     /**
      * get_cohort_id search for cohort id of a given ldap group name, create cohort, if autocreate = true
+     * the search must be mainly casesensitive, so sql_equal is necessary!
      *
      * @param string $groupname
      * @param boolean $autocreate
@@ -784,12 +785,13 @@ class enrol_oss_plugin extends enrol_plugin {
 
         debugging(self::$errorlogtag.'get_cohort_id('.$groupname.')... started '.date("H:i:s"),
             DEBUG_DEVELOPER);
-        $params = array (
-            'idnumber' => $groupname,
-            'component' => 'enrol_oss',
-            'contextid' => SYSCONTEXTID,
-        );
-        if (!$cohort = $DB->get_record('cohort', $params, '*', IGNORE_MULTIPLE)) {
+        $equalidnumber = $DB->sql_equal('idnumber', "'".$groupname."'");
+        $sql = "SELECT *
+                  FROM {cohort}
+                 WHERE {$equalidnumber}
+                       AND component = 'enrol_oss'
+                       AND contextid = ".SYSCONTEXTID;
+        if (!$cohort = $DB->get_record_sql($sql, null, '*', IGNORE_MULTIPLE)) {
             if (!$autocreate) {
                 return false;
             }
@@ -800,7 +802,7 @@ class enrol_oss_plugin extends enrol_plugin {
             $cohort->description = get_string('sync_description', 'enrol_oss');
             $cohortid = cohort_add_cohort($cohort);
         } else {
-            if ($DB->count_records('cohort', $params) > 1) {
+            if ($DB->count_records_sql($sql, null) > 1) {
                 if (debugging()) {
                     trigger_error(' There are more than one matching cohort with idnumber '.
                         $groupname .'. That is likely to cause problems.',E_USER_WARNING);
@@ -881,6 +883,7 @@ class enrol_oss_plugin extends enrol_plugin {
     /**
      * return an array of cohort instances used in the course with the
      * given course id and created by enrol_oss
+     * cohort instances are matched by cohort id (integer)
      * @return array
      */
     private function get_coursecohortlist($courseid) {
@@ -1195,14 +1198,16 @@ class enrol_oss_plugin extends enrol_plugin {
     private function get_localname($class) {
         debugging(self::$errorlogtag . "get_localname($class) started...\n");
         if (preg_match("/^".get_string("class_all_students_shortname", "enrol_oss")."$/", $class)) {
-            return get_string("class_all_students_localname", "enrol_oss");
+            $result = get_string("class_all_students_localname", "enrol_oss");
         } elseif (preg_match("/^".get_string("class_age_groups_shortname", "enrol_oss")."/", $class)
-            && preg_match("/(" . implode("|", explode(',', $this->config->class_prefixes)) . ")$/")) {
-            return get_string("class_age_groups_localname", "enrol_oss"). " "
+            && preg_match("/(" . implode("|", explode(',', $this->config->class_prefixes)) . ")$/", $class)) {
+            $result = get_string("class_age_groups_localname", "enrol_oss"). " "
                 . str_replace(get_string("class_age_groups_shortname", "enrol_oss"),"", $class);
         } else {
-            return get_string("class_localname","enrol_oss") . " " . $class;
+            $result = get_string("class_localname","enrol_oss") . " " . $class;
         }
+        debugging(self::$errorlogtag . "get_localname($class) ended with return $result\n");
+		return $result;
     }
 
     /**
@@ -2144,11 +2149,13 @@ class enrol_oss_plugin extends enrol_plugin {
         if ($dn == '') {
                 return '';
         }
+        $authldap = $this->authldap;
         if (!isset($this->userid_regex) or empty($this->userid_regex)) {
-            if (!isset($this->authldap) or empty($this->authldap)) {
-                $this->authldap = get_auth_plugin('ldap');
+            if (!isset($authldap) or empty($authldap)) {
+                $this->authldap = $authldap = get_auth_plugin('ldap');
             }
-            $this->userid_regex = "/^". $this->authldap->config->field_map_idnumber. "=([^,]+),/i";
+            $field_map_idnumber = isset($authldap->config->field_map_idnumber)? $authldap->config->field_map_idnumber : 'cn';
+            $this->userid_regex = "/^". $field_map_idnumber. "=([^,]+),/i";
             debugging(self::$errorlogtag . sprintf('userid_from_dn: Match userid with %s from %s',$this->userid_regex,$dn),
             DEBUG_DEVELOPER);
         }
@@ -2165,64 +2172,6 @@ class enrol_oss_plugin extends enrol_plugin {
         if ($user) {
             $this->sync_user_enrolments($user);
         }
-    }
-
-    /**
-     * WORKAROUND: auth_ldap->ldap_connect dies
-     * Connect to the LDAP server, using the plugin configured
-     * settings. It's actually a wrapper around ldap_connect_moodle()
-     *
-     * @return resource A valid LDAP connection or false
-     */
-    private function ldap_connect_ul ($authldap) {
-        // Cache ldap connections. They are expensive to set up
-        // and can drain the TCP/IP ressources on the server if we
-        // are syncing a lot of users (as we try to open a new connection
-        // to get the user details). This is the least invasive way
-        // to reuse existing connections without greater code surgery.
-        $rp = new ReflectionProperty($authldap,'ldapconns');
-        if ($rp->isProtected()) {
-            return $authldap->ldap_connect();
-        }
-        if(!empty($authldap->ldapconnection)) {
-            $authldap->ldapconns++;
-            return $authldap->ldapconnection;
-        }
-        if (isset($authldap->config->bind_dn)) {
-            $binddn = $authldap->config->bind_dn;
-        }
-        else {
-            $binddn = '';
-        }
-        if (isset($authldap->config->bind_pw)) {
-            $bindpw = $authldap->config->bind_pw;
-        }
-        else {
-            $bindpw = '';
-        }
-        if (isset($authldap->config->opt_deref)) {
-            $optderef = $authldap->config->opt_deref;
-        }
-        else {
-            $optderef = false;
-        }
-        if (isset($authldap->config->start_tls)) {
-            $starttls = $authldap->config->start_tls;
-        }
-        else {
-            $starttls = false;
-        }
-        if($ldapconnection = ldap_connect_moodle($authldap->config->host_url, $authldap->config->ldap_version,
-                                                 $authldap->config->user_type, $binddn,
-                                                 $bindpw, $optderef,
-                                                 $debuginfo, $starttls)) {
-            $authldap->ldapconns = 1;
-            $authldap->ldapconnection = $ldapconnection;
-            return $ldapconnection;
-        }
-
-        debugging(get_string('auth_ldap_noconnect_all', 'auth_ldap'));
-        return false;
     }
 
 } // End of class.

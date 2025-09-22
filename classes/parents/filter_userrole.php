@@ -88,8 +88,8 @@ class filter_userrole extends \user_filter_type {
         $field = $this->_name.'_role';
         $inverted = $this->_name.'_not';
 
-        if (array_key_exists($field, $formdata) and !empty($formdata->$field)) {
-            if(array_key_exists($inverted, $formdata)) {
+        if (property_exists($formdata, $field) and !empty($formdata->$field)) {
+            if(property_exists($formdata, $inverted)) {
                 return array('value' => (int)$formdata->$field,
                              'not'   => (string)$formdata->$inverted);
             } else {

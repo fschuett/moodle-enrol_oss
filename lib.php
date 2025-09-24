@@ -1830,15 +1830,21 @@ class enrol_oss_plugin extends enrol_plugin {
         $sql = "id<>".$CFG->siteguest." AND deleted<>1 AND auth='manual'"
                     ." AND username LIKE '".$this->config->parents_prefix."%'";
         $rs = $DB->get_recordset_select('user', $sql, array(),
-                    'username', 'username,id');
+                    'username', 'username,id,description');
         $parents = array();
+        $childrenWithParents = array();
         foreach($rs as $user) {
-            $childid = substr($user->username, strlen($this->config->parents_prefix));
-            $parents[$childid] = $user->id;
+            $childids = $user->description; //substr($user->username, strlen($this->config->parents_prefix));
+            foreach(explode(',', $childids) as $childid) { // get all the child ids and add all the parents
+                $parents[] = [$childid, $user->id];
+                if (!in_array($childid, $childrenWithParents)) {
+                    $childrenWithParents[] = $childid;
+                }
+            }
         }
         $children = $this->parents_get_children_uids();
-        $orphans = array_diff( array_keys ( $children ) , array_keys ( $parents ) );
-        $childless = array_diff( array_keys( $parents ), array_keys( $children ));
+        $orphans = array_diff( array_keys ( $children ) , $childrenWithParents );
+        $childless = array_diff( $childrenWithParents, array_keys( $children ));
         if( $this->config->parents_autocreate ) {
             // foreach $orphan create parent and modify $parents
         }
@@ -1854,20 +1860,20 @@ class enrol_oss_plugin extends enrol_plugin {
         $records = $DB->get_records_sql($sql);
         $relations = array();
         foreach($records as $record) {
-            $relations[$record->parentid] = $record->childid;
+            $relations[] = [$record->parentid, $record->childid];
         }
-        $to_create = array_diff( $parents, array_keys( $relations ));
-        $to_delete = array_diff( array_keys( $relations ), $parents );
-        foreach($to_create as $attr => $id) {
-            if(array_key_exists($attr, $children)) {
-                $this->parents_add_relationship($id, $children[$attr]);
+        $to_create = array_udiff( $parents, $relations, function ($a, $b) {return $a[0] === $b[0] && $a[1] === $b[1];});
+        $to_delete = array_udiff( $relations, $parents, function ($a, $b) {return $a[0] === $b[0] && $a[1] === $b[1];});
+        foreach($to_create as $rel) {
+            if(array_key_exists($rel[0], $children)) {
+                $this->parents_add_relationship($rel[1], $children[$attr]);
             } else {
                 debugging(self::$errorlogtag."parents_sync_relationships(): children array has no key $attr.\n");
             }
         }
-        foreach($to_delete as $attr => $parentid) {
-            if(array_key_exists($attr, $children)) {
-                $this->parents_remove_relationship($parentid, $children[$attr]);
+        foreach($to_delete as $rel) {
+            if(array_key_exists($rel[0], $children)) {
+                $this->parents_remove_relationship($rel[1], $children[$attr]);
             } else {
                 debugging(self::$errorlogtag."parents_sync_relationships(): children array has no key $attr.\n");
             }

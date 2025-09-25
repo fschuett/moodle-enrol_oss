@@ -1833,13 +1833,21 @@ class enrol_oss_plugin extends enrol_plugin {
                     'username', 'username,id,description');
         $parents = array();
         $childrenWithParents = array();
-        foreach($rs as $user) {
-            $childids = $user->description; //substr($user->username, strlen($this->config->parents_prefix));
-            foreach(explode(',', $childids) as $childid) { // get all the child ids and add all the parents
-                $parents[] = [$childid, $user->id];
-                if (!in_array($childid, $childrenWithParents)) {
-                    $childrenWithParents[] = $childid;
+        if ($this->config->parents_childfield === "description") {
+            foreach($rs as $user) {
+                $childids = $user->description; //substr($user->username, strlen($this->config->parents_prefix));
+                foreach(explode(',', $childids) as $childid) { // get all the child ids and add all the parents
+                    $parents[] = [$childid, $user->id];
+                    if (!in_array($childid, $childrenWithParents)) {
+                        $childrenWithParents[] = $childid;
+                    }
                 }
+            }
+        } else {
+            foreach($rs as $user) {
+                $childid = substr($user->username, strlen($this->config->parents_prefix));
+                $parents[] = [$childid, $user->id];
+                $childrenWithParents[] = $childid;
             }
         }
         $children = $this->parents_get_children_uids();

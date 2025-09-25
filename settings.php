@@ -276,4 +276,8 @@ if ($ADMIN->fulltree) {
         get_string('parents_child_attribute', 'enrol_oss'),
         get_string('parents_child_attribute_desc', 'enrol_oss'),
         'uniqueIdentifier', PARAM_TEXT));
+        $settings->add(new admin_setting_configselect('enrol_oss/parents_childfield',
+        get_string('parents_childfield', 'enrol_oss'),
+        get_string('parents_childfield_desc', 'enrol_oss'),
+        'username', ['username' => "Benutzername", 'description' => "Beschreibung"]));
 }

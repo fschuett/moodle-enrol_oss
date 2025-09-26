@@ -32,7 +32,7 @@ defined('MOODLE_INTERNAL') || die();
 
 /**
  * compare_relations
- * function to compare parent-child relations. Used in method 
+ * function to compare parent-child relations. Used for array_udiff in method 
  * parents_sync_relationships().
  * 
  * @param array $a consisting of child id and parent id

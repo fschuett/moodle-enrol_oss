@@ -1915,7 +1915,11 @@ class enrol_oss_plugin extends enrol_plugin {
             $this->parents_add_relationship($rel[1], $rel[0]);
         }
         foreach($to_delete as $rel) {
-            $this->parents_remove_relationship($rel[1], $rel[0]);
+            if (array_key_exists($rel[0], array_flip($children))) {
+                $this->parents_remove_relationship($rel[1], $rel[0]);
+            } else {
+                debugging(self::$errorlogtag."parents_sync_relationships(): child does not exist $rel[0].\n");
+            }
         }
     }
 

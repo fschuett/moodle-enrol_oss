@@ -30,6 +30,25 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+/**
+ * compare_relations
+ * function to compare parent-child relations. Used for array_udiff in method 
+ * parents_sync_relationships().
+ * 
+ * @param array $a consisting of child id and parent id
+ * @param array $b consisting of child id and parent id
+ * @return number
+ */
+function compare_relation($a, $b) {
+    if ($a[0] == $b[0]) {
+        if ($a[1] == $b[1]) return 0;
+        if ($a[1] < $b[1]) return -1;
+        return 1;
+    }
+    if ($a[0] < $b[0]) return -1;
+    return 1;
+}
+
 class enrol_oss_plugin extends enrol_plugin {
     protected $enroltype = 'enrol_oss';
     static protected $errorlogtag = '[ENROL OSS] ';
@@ -1827,49 +1846,79 @@ class enrol_oss_plugin extends enrol_plugin {
      */
     public function parents_sync_relationships() {
         global $DB, $CFG;
-        $sql = "id<>".$CFG->siteguest." AND deleted<>1 AND auth='manual'"
-                    ." AND username LIKE '".$this->config->parents_prefix."%'";
-        $rs = $DB->get_recordset_select('user', $sql, array(),
-                    'username', 'username,id');
-        $parents = array();
-        foreach($rs as $user) {
-            $childid = substr($user->username, strlen($this->config->parents_prefix));
-            $parents[$childid] = $user->id;
-        }
+
         $children = $this->parents_get_children_uids();
-        $orphans = array_diff( array_keys ( $children ) , array_keys ( $parents ) );
-        $childless = array_diff( array_keys( $parents ), array_keys( $children ));
+        $children_with_parents = array();
+        $parents_with_children = array();
+        $all_parents = array();
+        
+        // Get parent relations from their profile
+        $sql = "id<>".$CFG->siteguest." AND deleted<>1 AND auth='manual'"
+            ." AND username LIKE '".$this->config->parents_prefix."%'";
+        $rs = $DB->get_recordset_select('user', $sql, array(),
+            'username', 'username,id,description');
+        $parent_relations = array();
+        if ($this->config->parents_childfield === "description") {
+            foreach($rs as $user) {
+                $all_parents[$user->id] = $user->username;
+                // iterate over all child ids in user description
+                foreach(explode(',', strip_tags($user->description)) as $childid) {
+                    $childid = trim($childid);
+                    if (array_key_exists($childid, $children)) {
+                        $real_childid = $children[$childid];
+                        $parent_relations[] = [$real_childid, $user->id];
+                        $children_with_parents[$childid] = $real_childid;
+                        $parents_with_children[$user->id] = $username;
+                    }
+                }
+            }
+        } else {
+            foreach($rs as $user) {
+                $all_parents[$user->id] = $user->username;
+                $childid = substr($user->username, strlen($this->config->parents_prefix));
+                if (array_key_exists($childid, $children)) {
+                    $real_childid = $children[$childid];
+                    $parent_relations[] = [$childid, $user->id];
+                    $children_with_parents[$childid] = $real_childid;
+                    $parents_with_children[$user->id] = $username;
+                }
+            }
+        }
+        $orphans = array_diff( $children, $children_with_parents );
+        $childless = array_diff( $all_parents, $parents_with_children);
         if( $this->config->parents_autocreate ) {
             // foreach $orphan create parent and modify $parents
+            echo "Children without parents:\n";
+            var_dump($orphans);
         }
         if( $this->config->parents_autoremove ) {
             // foreach $childless remove parent and modify $parents
+            echo "Parents without children:\n";
+            var_dump($childless);
         }
-        // sync relations beween parents and children
-        $relation_to_be = array_intersect( array_keys( $parents ), array_keys( $children ));
-        $sql = "SELECT userid AS parentid, instanceid AS childid
+        
+        // Get existing relations
+        $sql = "SELECT {role_assignments}.id as id, userid AS parentid, instanceid AS childid
                      FROM {role_assignments}
                      JOIN {context} ON {context}.id = {role_assignments}.contextid
                      WHERE contextlevel=".CONTEXT_USER." AND roleid=".$this->config->parents_role;
         $records = $DB->get_records_sql($sql);
-        $relations = array();
+        $existing_relations = array();
         foreach($records as $record) {
-            $relations[$record->parentid] = $record->childid;
+            $existing_relations[] = [$record->childid, $record->parentid];
         }
-        $to_create = array_diff( $parents, array_keys( $relations ));
-        $to_delete = array_diff( array_keys( $relations ), $parents );
-        foreach($to_create as $attr => $id) {
-            if(array_key_exists($attr, $children)) {
-                $this->parents_add_relationship($id, $children[$attr]);
-            } else {
-                debugging(self::$errorlogtag."parents_sync_relationships(): children array has no key $attr.\n");
-            }
+        
+        // Create new relations and remove old
+        $to_create = array_udiff( $parent_relations, $existing_relations, 'compare_relation');
+        $to_delete = array_udiff( $existing_relations, $parent_relations, 'compare_relation');
+        foreach($to_create as $rel) {
+            $this->parents_add_relationship($rel[1], $rel[0]);
         }
-        foreach($to_delete as $attr => $parentid) {
-            if(array_key_exists($attr, $children)) {
-                $this->parents_remove_relationship($parentid, $children[$attr]);
+        foreach($to_delete as $rel) {
+            if (array_key_exists($rel[0], array_flip($children))) {
+                $this->parents_remove_relationship($rel[1], $rel[0]);
             } else {
-                debugging(self::$errorlogtag."parents_sync_relationships(): children array has no key $attr.\n");
+                debugging(self::$errorlogtag."parents_sync_relationships(): child does not exist $rel[0].\n");
             }
         }
     }

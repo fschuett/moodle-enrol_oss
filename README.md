@@ -1,7 +1,7 @@
 moodle-enrol_oss
 ====================
 
-enrolment plugin for moodle from 3.x to autoenrol in
+enrolment plugin for moodle to autoenrol in
 conjunction with the open school server or other ldap servers enrol_oss.
 
 It is supposed to work with the Open School Server (www.openschoolserver.net) and
@@ -54,6 +54,8 @@ The number is used to create the relationship between parent and student automat
 
 Changelog
 ---------
+2026-01-03 enhancement: multiple parents and multiple children relationships are possible (thanks to Martin Ringwelski).
+
 2024-10-03 fix: match cohort names case sensitive in enrolment, too (2.4.3)
 
 2024-08-03 fix: cohort names are case sensitive and need to be
@@ -78,4 +80,5 @@ Changelog
 
 Hildesheim, Germany
 
-Frank Schütte,2016-2024(fschuett@gymhim.de)
+Frank Schütte,2016-2026(fschuett@gymhim.de)
+Martin Ringwelski, 2026

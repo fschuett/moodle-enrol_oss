@@ -40,17 +40,14 @@ The parents can be imported from file, which needs to be of certain structure.
 
 username;lastname;firstname;email
 
-E-Mail can be fake mail with example.com but needs to be unique, f.e.
-"nobody####@example.com" with student no. ####.
-There is a patch discussed on https://moodle.org/mod/forum/discuss.php?d=96114
-which makes non unique email addresses possible.
-This patch is very helpful, because parents of siblings get multiple parent accounts.
-In newer moodle versions there is the setting "allowaccountssmaeemail", which
-reduces the mentioned patch to the file emailupdate.php.
+E-Mail can be a fake mail with example.com f.e. "nobody@example.com".
 
-username must be "eltern_####", where #### is the student no. in ldap structure.
+username must be unique and start with "eltern_", f.e. "eltern_####", where #### is the student no. in ldap structure.
 
 The number is used to create the relationship between parent and student automatically.
+
+From version 2.5.0 on the student number can be alternatively saved to the parent description field as a comma separated list
+to automatically relate one parent account to multiple children. If the description field is used, one child can relate to multiple parents, too.
 
 Changelog
 ---------

@@ -78,4 +78,4 @@ Changelog
 Hildesheim, Germany
 
 Frank Schütte,2016-2026(fschuett@gymhim.de)
-Martin Ringwelski, 2026
+Martin Ringwelski, 2026 (mr@it.kollektiv.hamburg
